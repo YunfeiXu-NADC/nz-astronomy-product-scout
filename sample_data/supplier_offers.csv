@@ -1,0 +1,4 @@
+source_url,product_name,sku,unit_price_cny,moq,weight_g,length_mm,width_mm,height_mm,domestic_shipping_cny,supplier,monthly_sales_ref,lead_time_days
+https://1688.example/m48,M48 Female to T2 Male Adapter,M48-T2,12.40,10,32,48,48,12,4.50,Astronomy CNC,120,5
+https://1688.example/spacer-5mm,T2 5mm Spacer,T2-SPACER-5,8.20,20,18,42,42,5,4.00,Optics Parts Co,180,6
+

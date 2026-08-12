@@ -1,0 +1,104 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Arial;}}
+{\colortbl;\red31\green78\blue121;\red80\green80\blue80;}
+\paperw12240\paperh15840\margl1440\margr1440\margt1080\margb1080
+\f0\fs22
+\pard\qc\b\fs34 NZ Astronomy Product Scout\par
+\pard\qc\b0\fs24 Google Ads API Tool Documentation\par
+\pard\qc\cf2\fs20 Prepared for Google Ads API Basic Access Review\par
+\pard\cf0\fs22\par
+
+\pard\b 1. Tool Overview\par
+\pard\b0
+NZ Astronomy Product Scout is an internal ecommerce product research tool. The tool is used to evaluate potential astronomy and astrophotography accessory products for the New Zealand market before sourcing inventory or running small ecommerce experiments.\par
+\par
+The tool combines search demand data, public import statistics, supplier cost information, shipping cost estimates, and internal scoring rules to create an internal product opportunity ranking. The tool is not a public application and is not offered as a service to third-party clients.\par
+\par
+
+\pard\b 2. Business Model\par
+\pard\b0
+The business is operated from China and targets ecommerce sales opportunities in New Zealand. The first product category is astronomy and astrophotography accessories, such as thread adapters, spacers, camera adapters, brackets, Bahtinov masks, dust caps, and other low-risk passive accessories.\par
+\par
+The tool supports product research and sourcing decisions. It helps decide which products are worth further supplier review, cost analysis, and small-scale market testing. It does not sell advertising services, manage third-party advertising accounts, or provide Google Ads API data to external customers.\par
+\par
+
+\pard\b 3. Intended Users\par
+\pard\b0
+The intended users are internal users only. Access is limited to the owner/operator and contractors who assist with software development, product research, or ecommerce operations.\par
+\par
+The tool is not available to the general public. It is not used by external clients. It does not expose Google Ads API data through a public website, SaaS product, dashboard for customers, or resale data product.\par
+\par
+
+\pard\b 4. Google Ads API Usage\par
+\pard\b0
+The Google Ads API is used only for keyword research and demand analysis. The primary service used by the tool is KeywordPlanIdeaService, especially keyword historical metrics for New Zealand English search terms.\par
+\par
+The tool retrieves keyword metrics such as:\par
+\pard\li360
+- average monthly searches\par
+- monthly search volume history\par
+- competition and competition index\par
+- top-of-page bid low range\par
+- top-of-page bid high range\par
+\pard\li0
+\par
+Example keyword inputs include telescope adapter, astrophotography adapter, M48 adapter, T2 adapter, telescope camera adapter, telescope extension tube, guide scope bracket, and Bahtinov mask.\par
+\par
+
+\pard\b 5. Data Flow\par
+\pard\b0
+The tool follows this internal workflow:\par
+\pard\li360
+1. Internal user enters seed astronomy product ideas or keywords.\par
+2. The tool requests keyword historical metrics through Google Ads API.\par
+3. The retrieved metrics are stored in a local database for internal analysis.\par
+4. The tool combines keyword demand with supplier cost, shipping cost, import evidence, logistics, and product risk information.\par
+5. The tool generates an internal product opportunity score and ranking.\par
+6. Internal users review the ranking to decide which products may be worth further supplier review or small-scale ecommerce testing.\par
+\pard\li0
+\par
+
+\pard\b 6. Data Storage and Refresh Frequency\par
+\pard\b0
+Google Ads API keyword metrics are stored in a local database for internal business analysis. The data is cached to avoid unnecessary repeated API calls. Keyword metrics are expected to be refreshed periodically, normally monthly or when product research inputs change.\par
+\par
+The tool stores only the metrics required for product research, such as keyword, product mapping, monthly search volume, competition index, and bid range. API credentials are not stored in source code and are configured through local environment variables or secure deployment settings.\par
+\par
+
+\pard\b 7. What the Tool Does Not Do\par
+\pard\b0
+The tool does not scrape Google Search results.\par
+The tool does not resell Google Ads API data.\par
+The tool does not expose Google Ads API data to external users or clients.\par
+The tool does not manage third-party Google Ads accounts.\par
+The tool does not create, modify, or optimize campaigns in V1.\par
+The tool does not use Google Ads API for app conversion tracking or remarketing.\par
+The tool does not upload user lists, create remarketing audiences, or process personal advertising audience data.\par
+\par
+
+\pard\b 8. Account and Access Model\par
+\pard\b0
+The API token is used only with this internally developed tool. The tool is controlled by the business owner/operator. Contractors may help develop or operate the tool, but the tool is not sold or provided to external clients.\par
+\par
+The requested Google Ads API access level is intended to support internal keyword research using KeywordPlanIdeaService. Standard Access is not required for the initial version. The initial production use case is limited to product research and demand estimation.\par
+\par
+
+\pard\b 9. Audience and Compliance Summary\par
+\pard\b0
+Audience: internal users only.\par
+Primary use case: keyword research and ecommerce product demand analysis.\par
+Market focus: New Zealand.\par
+Product focus: astronomy and astrophotography accessories.\par
+No third-party ad management: yes.\par
+No public client access: yes.\par
+No Google Search scraping: yes.\par
+No resale of Google Ads API data: yes.\par
+No app conversion tracking or remarketing use in V1: yes.\par
+\par
+
+\pard\b 10. Contact and Ownership\par
+\pard\b0
+The tool is owned and operated by the applicant for internal ecommerce product research. The principal place of business is China. The initial company or developer identity may be listed as an individual developer if no separate incorporated company is used for this application.\par
+\par
+\pard\cf2\fs20 Document date: August 12, 2026\par
+}

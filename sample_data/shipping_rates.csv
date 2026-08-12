@@ -1,0 +1,4 @@
+provider,route,min_weight_g,max_weight_g,volumetric_divisor,base_fee_cny,fee_per_kg_cny,delivery_days
+CN Express,china_to_nz_direct,0,500,6000,28,60,8
+CN Express,china_to_nz_direct,501,1000,6000,38,55,10
+
