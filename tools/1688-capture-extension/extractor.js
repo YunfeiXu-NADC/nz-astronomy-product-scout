@@ -37,20 +37,31 @@ function extract1688Capture() {
     return best;
   };
   const resolveOfferUrl = (element) => {
-    const offerId = element.getAttribute("data-offer-id") ||
-      element.getAttribute("data-offerid");
-    const rawUrl = element.href || element.getAttribute("data-href") ||
-      element.getAttribute("data-url") ||
-      (offerId ? `https://detail.1688.com/offer/${offerId}.html` : "");
-    if (!rawUrl) return null;
-    try {
-      const parsed = new URL(rawUrl, location.href);
-      const is1688 = parsed.hostname === "1688.com" || parsed.hostname.endsWith(".1688.com");
-      if (!is1688 || !/\/offer\/\d+/.test(parsed.pathname)) return null;
-      return parsed.href.split("?")[0];
-    } catch (_) {
-      return null;
+    const rawValues = [];
+    let current = element;
+    for (let depth = 0; current && depth < 7; depth += 1, current = current.parentElement) {
+      for (const attribute of Array.from(current.attributes || [])) {
+        if (/(?:href|url|offer|product|data)/i.test(attribute.name)) {
+          rawValues.push(attribute.value);
+        }
+      }
+      for (const anchor of Array.from(current.querySelectorAll?.("a[href]") || []).slice(0, 8)) {
+        rawValues.push(anchor.href);
+      }
+      rawValues.push((current.outerHTML || "").slice(0, 50000));
     }
+    for (const rawValue of rawValues) {
+      let value = String(rawValue || "");
+      try {
+        value = decodeURIComponent(value);
+      } catch (_) {
+        // Keep the undecoded value when the page contains malformed escapes.
+      }
+      const match = value.match(/\/offer\/(\d{6,})/i) ||
+        value.match(/offer(?:Id|_id)?\D{0,30}(\d{6,})/i);
+      if (match) return `https://detail.1688.com/offer/${match[1]}.html`;
+    }
+    return null;
   };
   const extractItem = (element, sourceUrl) => {
     const card = findCard(element);
@@ -58,12 +69,17 @@ function extract1688Capture() {
     const segments = leafTexts(card);
     const image = card.querySelector("img") || element.querySelector("img");
     const titleNode = card.querySelector('[title], [class*="title"], [class*="name"]');
+    const fallbackTitle = segments
+      .filter((segment) => segment.length >= 5 && segment.length <= 180)
+      .filter((segment) => /[A-Za-z\u4e00-\u9fff]/.test(segment))
+      .filter((segment) => !/(?:好评率|回头率|退货|包运费|有限公司)$/.test(segment))
+      .sort((left, right) => right.length - left.length)[0];
     const title = clean(
       element.getAttribute("title") ||
       (titleNode && titleNode.getAttribute("title")) ||
       (titleNode && titleNode.textContent) ||
       (image && image.getAttribute("alt")) ||
-      element.textContent
+      fallbackTitle
     );
     const priceMatch = firstMatch(segments, [
       /(?:¥|￥)\s*(\d+(?:\.\d+)?)/,
@@ -78,16 +94,18 @@ function extract1688Capture() {
       text.match(/起批\s*(\d+)/);
     const salesMatch = firstMatch(segments, [
       /(?:成交|已售|销量|付款)\s*([\d,.万+]+)/,
+      /([\d,.万+]+)\s*件/,
     ]) || text.match(/(?:成交|已售|销量|付款)\s*([\d,.万+]+)/);
     const supplierNode = card.querySelector(
       '[class*="company"], [class*="supplier"], [class*="shop"], [class*="seller"]'
     );
+    const supplierText = segments.find((segment) => /(?:有限公司|公司|商行|工厂|厂)$/.test(segment));
     return {
       title,
       price: priceMatch[1],
       moq: moqMatch ? parseInt(moqMatch[1], 10) : 1,
       detailUrl: sourceUrl,
-      supplier: clean(supplierNode && supplierNode.textContent) || "Unknown supplier",
+      supplier: clean(supplierNode && supplierNode.textContent) || supplierText || "Unknown supplier",
       saleQuantity: salesMatch ? salesMatch[1] : null,
       imageUrl: image && (image.currentSrc || image.src) || null,
       captureContext: "related_product",
@@ -143,12 +161,17 @@ function extract1688Capture() {
   };
 
   const candidates = Array.from(document.querySelectorAll([
-    'a[href*="/offer/"]',
+    'a[href]',
     '[data-href*="/offer/"]',
     '[data-url*="/offer/"]',
+    '[data-href*="offerId"]',
+    '[data-url*="offerId"]',
     '[data-offer-id]',
     '[data-offerid]',
   ].join(',')));
+  const priceCandidates = visibleElements("span, div, p")
+    .filter((element) => element.children.length <= 1)
+    .filter((element) => /(?:¥|￥)\s*\d+(?:\.\d+)?/.test(clean(element.textContent)));
   const items = new Map();
   const currentItem = extractCurrentDetailItem();
   if (currentItem) items.set(currentItem.detailUrl, currentItem);
@@ -156,6 +179,12 @@ function extract1688Capture() {
     const sourceUrl = resolveOfferUrl(candidate);
     if (!sourceUrl || items.has(sourceUrl)) continue;
     const item = extractItem(candidate, sourceUrl);
+    if (item) items.set(sourceUrl, item);
+  }
+  for (const priceCandidate of priceCandidates) {
+    const sourceUrl = resolveOfferUrl(priceCandidate);
+    if (!sourceUrl || items.has(sourceUrl)) continue;
+    const item = extractItem(priceCandidate, sourceUrl);
     if (item) items.set(sourceUrl, item);
   }
 
@@ -170,5 +199,14 @@ function extract1688Capture() {
     page_title: document.title,
     captured_at: new Date().toISOString(),
     items: Array.from(items.values()),
+    diagnostics: {
+      frame_url: location.href,
+      anchors: document.querySelectorAll("a[href]").length,
+      candidate_elements: candidates.length,
+      visible_price_elements: priceCandidates.length,
+      sample_hrefs: Array.from(document.querySelectorAll("a[href]"))
+        .slice(0, 20)
+        .map((anchor) => anchor.href),
+    },
   };
 }
