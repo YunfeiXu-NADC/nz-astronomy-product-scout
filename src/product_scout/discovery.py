@@ -73,6 +73,7 @@ def parse_1688_html(html: str, *, source_url: str, limit: int = 100) -> list[Sou
 def parse_1688_json_payload(
     payload: Any, *, source_url: str, limit: int = 100
 ) -> list[SourceListing]:
+    payload = _normalize_extension_capture(payload)
     listings: list[SourceListing] = []
     seen: set[tuple[str, str]] = set()
     for listing in _source_listings_from_json(payload, source_url=source_url):
@@ -84,6 +85,23 @@ def parse_1688_json_payload(
         if len(listings) >= limit:
             break
     return listings
+
+
+def _normalize_extension_capture(payload: Any) -> Any:
+    if not isinstance(payload, dict) or payload.get("source") != "1688_chrome_extension":
+        return payload
+    page_title = str(payload.get("page_title") or "").strip()
+    page_title = re.sub(r"\s*-\s*阿里巴巴\s*$", "", page_title).strip()
+    items = payload.get("items")
+    if not page_title or not isinstance(items, list):
+        return payload
+
+    normalized_items: list[Any] = []
+    for item in items:
+        if isinstance(item, dict) and item.get("captureContext") == "current_product":
+            item = {**item, "title": page_title}
+        normalized_items.append(item)
+    return {**payload, "items": normalized_items}
 
 
 def build_discovery_result(listings: list[SourceListing]) -> DiscoveryResult:

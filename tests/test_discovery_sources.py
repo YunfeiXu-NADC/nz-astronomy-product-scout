@@ -129,6 +129,33 @@ def test_chinese_sales_units_are_expanded():
     assert listings[1].monthly_sales_ref == 12000
 
 
+def test_extension_detail_capture_uses_page_title_for_current_product():
+    listings = parse_1688_json_payload(
+        {
+            "source": "1688_chrome_extension",
+            "page_title": "天文望远镜 M48 M42 转接环 - 阿里巴巴",
+            "items": [
+                {
+                    "captureContext": "current_product",
+                    "title": "徐州天缘星美光学仪器有限公司",
+                    "price": "7.37",
+                    "detailUrl": "https://detail.1688.com/offer/744155041744.html",
+                },
+                {
+                    "captureContext": "related_product",
+                    "title": "M42 相机转接环",
+                    "price": "8.42",
+                    "detailUrl": "https://detail.1688.com/offer/563641416894.html",
+                },
+            ],
+        },
+        source_url="extension-capture.json",
+    )
+
+    assert listings[0].title == "天文望远镜 M48 M42 转接环"
+    assert listings[1].title == "M42 相机转接环"
+
+
 def test_1688_discovery_batch_writes_pipeline_ready_csvs(tmp_path):
     source = tmp_path / "1688.json"
     products = tmp_path / "products.csv"

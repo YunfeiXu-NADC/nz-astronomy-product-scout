@@ -98,7 +98,8 @@ function extract1688Capture() {
     if (!/\/offer\/\d+/.test(location.pathname)) return null;
     const metaTitle = document.querySelector('meta[property="og:title"]')?.content;
     const heading = visibleElements("h1")[0];
-    const title = clean(metaTitle || heading?.textContent || document.title.split(" - ")[0]);
+    const pageTitle = document.title.replace(/\s*-\s*阿里巴巴\s*$/, "");
+    const title = clean(metaTitle || pageTitle || heading?.textContent);
     const metaPrice = document.querySelector(
       'meta[property="product:price:amount"], meta[itemprop="price"]'
     )?.content;
@@ -125,9 +126,10 @@ function extract1688Capture() {
       '[class*="supplier"]',
       '[class*="shop-name"]',
     ].join(","))[0];
-    const image = document.querySelector(
-      '[class*="main"] img, [class*="gallery"] img, meta[property="og:image"]'
-    );
+    const metaImage = document.querySelector('meta[property="og:image"]')?.content;
+    const image = visibleElements('[class*="main"] img, [class*="gallery"] img, img')
+      .find((element) => element.naturalWidth >= 160 && element.naturalHeight >= 160 &&
+        !/\.svg(?:$|\?)/i.test(element.currentSrc || element.src));
     return {
       title,
       price,
@@ -135,7 +137,7 @@ function extract1688Capture() {
       detailUrl: location.href.split("?")[0],
       supplier: clean(supplierNode?.textContent) || "Unknown supplier",
       saleQuantity: salesMatch ? salesMatch[1] : null,
-      imageUrl: image?.content || image?.currentSrc || image?.src || null,
+      imageUrl: metaImage || image?.currentSrc || image?.src || null,
       captureContext: "current_product",
     };
   };
