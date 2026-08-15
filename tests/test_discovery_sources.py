@@ -104,8 +104,33 @@ def test_discovery_adapter_keywords_remain_product_specific():
 
     assert [seed.keyword for seed in seeds] == [
         "m48 to m54 telescope adapter",
+        "m48 telescope adapter",
+        "m54 telescope adapter",
     ]
     assert all(seed.keyword != "telescope adapter" for seed in seeds)
+
+
+def test_discovery_adapter_keywords_require_telescope_intent():
+    listings = parse_1688_json_payload(
+        {
+            "items": [
+                {
+                    "title": "天文望远镜 M48x0.75 转 M54x0.75 转接环 QHY",
+                    "price": "13",
+                    "url": "https://detail.1688.com/offer/9003.html",
+                }
+            ]
+        },
+        source_url="fixture.json",
+    )
+
+    seeds = build_discovery_result(listings).keyword_seeds
+    keywords = [seed.keyword for seed in seeds]
+
+    assert "m48 to m54 telescope adapter" in keywords
+    assert "m48 telescope adapter" in keywords
+    assert "m54 telescope adapter" in keywords
+    assert all("telescope adapter" in keyword for keyword in keywords)
 
 
 def test_chrome_extension_capture_is_compatible_with_discovery_parser():

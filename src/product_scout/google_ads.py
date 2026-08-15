@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 import os
 from pathlib import Path
+import time
 from typing import Protocol
 
 from pydantic import BaseModel
@@ -67,19 +68,26 @@ class GoogleAdsKeywordRefreshService:
     ) -> list[KeywordMetric]:
         metrics: list[KeywordMetric] = []
         products_by_id = {product.id: product for product in products}
+        product_ids_by_keyword: dict[str, list[str]] = {}
         for product_id, keywords in keywords_by_product.items():
             if product_id not in products_by_id:
                 continue
             clean_keywords = [_normalize_keyword(keyword) for keyword in keywords if keyword.strip()]
-            if not clean_keywords:
-                continue
-            google_metrics = self.client.historical_metrics(
-                keywords=clean_keywords,
-                location=self.location,
-                language=self.language,
-            )
-            for google_metric in google_metrics:
-                normalized_keyword = _normalize_keyword(google_metric.keyword)
+            for keyword in clean_keywords:
+                owners = product_ids_by_keyword.setdefault(keyword, [])
+                if product_id not in owners:
+                    owners.append(product_id)
+
+        if not product_ids_by_keyword:
+            return []
+        google_metrics = self.client.historical_metrics(
+            keywords=list(product_ids_by_keyword),
+            location=self.location,
+            language=self.language,
+        )
+        for google_metric in google_metrics:
+            normalized_keyword = _normalize_keyword(google_metric.keyword)
+            for product_id in product_ids_by_keyword.get(normalized_keyword, []):
                 metrics.append(
                     KeywordMetric(
                         product_id=product_id,
@@ -148,9 +156,16 @@ class GoogleAdsKeywordPlannerClient:
 class GoogleAdsRestKeywordPlannerClient:
     """REST fallback client for networks where Google Ads gRPC is unreliable."""
 
-    def __init__(self, config: GoogleAdsCredentialConfig, *, timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        config: GoogleAdsCredentialConfig,
+        *,
+        timeout_seconds: int = 30,
+        max_retries: int = 3,
+    ) -> None:
         self.config = config
         self.timeout_seconds = timeout_seconds
+        self.max_retries = max(1, max_retries)
         try:
             import requests
             from google.auth.transport.requests import Request
@@ -197,17 +212,33 @@ class GoogleAdsRestKeywordPlannerClient:
         if self.config.login_customer_id:
             headers["login-customer-id"] = _normalize_customer_id(self.config.login_customer_id)
 
-        response = self._requests.post(
-            url,
-            headers=headers,
-            json={
-                "keywords": normalized_keywords,
-                "language": _language_resource_name(language),
-                "geoTargetConstants": [_geo_target_resource_name(location)],
-                "keywordPlanNetwork": "GOOGLE_SEARCH",
-            },
-            timeout=self.timeout_seconds,
-        )
+        request_body = {
+            "keywords": normalized_keywords,
+            "language": _language_resource_name(language),
+            "geoTargetConstants": [_geo_target_resource_name(location)],
+            "keywordPlanNetwork": "GOOGLE_SEARCH",
+        }
+        response = None
+        for attempt in range(self.max_retries):
+            try:
+                response = self._requests.post(
+                    url,
+                    headers=headers,
+                    json=request_body,
+                    timeout=self.timeout_seconds,
+                )
+            except self._requests.exceptions.RequestException as exc:
+                if attempt + 1 >= self.max_retries:
+                    raise RuntimeError(
+                        f"Google Ads network request failed after {self.max_retries} attempts: {exc}"
+                    ) from exc
+                time.sleep(2**attempt)
+                continue
+            if response.ok or response.status_code not in {429, 500, 502, 503, 504}:
+                break
+            if attempt + 1 < self.max_retries:
+                time.sleep(2**attempt)
+        assert response is not None
         if not response.ok:
             raise RuntimeError(_format_google_ads_rest_error(response))
         data = response.json()

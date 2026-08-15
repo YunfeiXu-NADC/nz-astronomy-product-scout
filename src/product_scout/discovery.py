@@ -468,10 +468,11 @@ def _product_id(source_url: str, sku: str) -> str:
 def _keyword_seeds(product_id: str, canonical_name: str, product_type: str) -> list[KeywordSeed]:
     cluster = product_type
     canonical_keyword = canonical_name.lower()
-    seed_terms = [canonical_keyword]
-    if "adapter" in product_type and "telescope adapter" not in canonical_keyword:
-        seed_terms.append(f"{canonical_keyword} telescope adapter")
-    elif product_type == "bracket":
+    if "adapter" in product_type:
+        seed_terms = _adapter_keyword_terms(canonical_keyword)
+    else:
+        seed_terms = [canonical_keyword]
+    if product_type == "bracket":
         seed_terms.append(f"{canonical_keyword} telescope bracket")
     elif product_type == "bahtinov_mask":
         seed_terms.append("bahtinov mask")
@@ -488,6 +489,30 @@ def _keyword_seeds(product_id: str, canonical_name: str, product_type: str) -> l
         for term in seed_terms
         if term.strip()
     ]
+
+
+def _adapter_keyword_terms(canonical_keyword: str) -> list[str]:
+    intent_keyword = (
+        canonical_keyword
+        if "telescope adapter" in canonical_keyword
+        else f"{canonical_keyword} telescope adapter"
+    )
+    connectors: list[str] = []
+    for match in re.finditer(
+        r"m\d{2,3}|(?<![a-z0-9])(?:t2|sct|eos|ef-m|ef|rf|n1|nex|nikon|canon|sony|fuji)(?![a-z0-9])",
+        canonical_keyword,
+        flags=re.IGNORECASE,
+    ):
+        connector = match.group(0).lower()
+        if connector not in connectors:
+            connectors.append(connector)
+
+    terms = [intent_keyword]
+    if len(connectors) >= 2:
+        terms.append(f"{connectors[0]} to {connectors[1]} telescope adapter")
+    for connector in connectors[:2]:
+        terms.append(f"{connector} telescope adapter")
+    return list(dict.fromkeys(terms))
 
 
 def _dedupe_keyword_seeds(seeds: list[KeywordSeed]) -> list[KeywordSeed]:

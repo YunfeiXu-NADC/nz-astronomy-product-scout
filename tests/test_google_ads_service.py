@@ -34,6 +34,21 @@ class RecordingKeywordPlannerClient:
         ]
 
 
+class EchoKeywordPlannerClient(RecordingKeywordPlannerClient):
+    def historical_metrics(self, *, keywords, location, language):
+        self.calls.append(
+            {"keywords": keywords, "location": location, "language": language}
+        )
+        return [
+            GoogleKeywordPlanMetric(
+                keyword=keyword,
+                monthly_searches=10,
+                monthly_history=[],
+            )
+            for keyword in keywords
+        ]
+
+
 def test_google_ads_refresh_enforces_new_zealand_english_and_clusters_synonyms():
     product = ProductCandidate(
         id="prod_1",
@@ -68,6 +83,41 @@ def test_google_ads_refresh_enforces_new_zealand_english_and_clusters_synonyms()
     assert metrics[0].product_id == "prod_1"
     assert metrics[0].keyword_cluster == "m48_t2_adapter"
     assert metrics[0].monthly_searches == 210
+
+
+def test_google_ads_refresh_batches_keywords_and_maps_shared_results_to_products():
+    first = ProductCandidate(
+        id="prod_1",
+        canonical_name="M48 Adapter",
+        sku="M48",
+        category="adapter",
+        subcategory="thread adapter",
+        product_type="thread_adapter",
+        weight_g=30,
+        length_mm=48,
+        width_mm=48,
+        height_mm=10,
+        expected_sell_price_nzd="39.90",
+    )
+    second = first.model_copy(update={"id": "prod_2", "sku": "M54"})
+    client = EchoKeywordPlannerClient()
+    service = GoogleAdsKeywordRefreshService(client)
+
+    metrics = service.refresh(
+        [first, second],
+        {
+            "prod_1": ["m48 t2 adapter", "shared telescope adapter"],
+            "prod_2": ["shared telescope adapter"],
+        },
+        {
+            "m48 t2 adapter": "m48_adapter",
+            "shared telescope adapter": "shared_adapter",
+        },
+    )
+
+    assert len(client.calls) == 1
+    assert client.calls[0]["keywords"] == ["m48 t2 adapter", "shared telescope adapter"]
+    assert [metric.product_id for metric in metrics] == ["prod_1", "prod_1", "prod_2"]
 
 
 def test_load_google_ads_config_reads_dotenv_and_normalizes_customer_ids(tmp_path):
