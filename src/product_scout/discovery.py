@@ -93,13 +93,19 @@ def _normalize_extension_capture(payload: Any) -> Any:
     page_title = str(payload.get("page_title") or "").strip()
     page_title = re.sub(r"\s*-\s*阿里巴巴\s*$", "", page_title).strip()
     items = payload.get("items")
-    if not page_title or not isinstance(items, list):
+    if not isinstance(items, list):
         return payload
 
     normalized_items: list[Any] = []
     for item in items:
-        if isinstance(item, dict) and item.get("captureContext") == "current_product":
-            item = {**item, "title": page_title}
+        if isinstance(item, dict):
+            item = dict(item)
+            if item.get("captureContext") == "current_product" and page_title:
+                item["title"] = page_title
+            elif isinstance(item.get("title"), str):
+                item["title"] = re.sub(r"\s*@\s*$", "", item["title"]).strip()
+            if isinstance(item.get("supplier"), str):
+                item["supplier"] = re.sub(r"\s*旺旺在线\s*$", "", item["supplier"]).strip()
         normalized_items.append(item)
     return {**payload, "items": normalized_items}
 
@@ -283,7 +289,7 @@ def _listing_from_mapping(data: dict[str, Any], *, source_url: str) -> SourceLis
         data,
         ["unit_price_cny", "unitPriceCny", "price", "priceCny", "salePrice", "discountPrice"],
     )
-    if not title or price is None:
+    if not title or title in {"反馈", "登录", "注册", "搜索"} or price is None:
         return None
 
     item_url = _normalize_url(
@@ -461,16 +467,18 @@ def _product_id(source_url: str, sku: str) -> str:
 
 def _keyword_seeds(product_id: str, canonical_name: str, product_type: str) -> list[KeywordSeed]:
     cluster = product_type
-    seed_terms = [
-        canonical_name.lower(),
-        product_type.replace("_", " "),
-    ]
-    if "adapter" in product_type:
-        seed_terms.append("telescope adapter")
-    if product_type == "bahtinov_mask":
+    canonical_keyword = canonical_name.lower()
+    seed_terms = [canonical_keyword]
+    if "adapter" in product_type and "telescope adapter" not in canonical_keyword:
+        seed_terms.append(f"{canonical_keyword} telescope adapter")
+    elif product_type == "bracket":
+        seed_terms.append(f"{canonical_keyword} telescope bracket")
+    elif product_type == "bahtinov_mask":
         seed_terms.append("bahtinov mask")
-    if product_type == "dust_cap":
+    elif product_type == "dust_cap":
         seed_terms.append("telescope dust cap")
+    elif product_type == "filter_case":
+        seed_terms.append("telescope filter case")
     return [
         KeywordSeed(
             product_id=product_id,

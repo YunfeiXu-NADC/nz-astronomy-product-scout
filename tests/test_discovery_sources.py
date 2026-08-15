@@ -86,6 +86,28 @@ def test_discovery_result_builds_products_supplier_offers_and_keyword_seeds():
     assert result.products[1].safety_risk == "solar_observation,battery,powered_electronics"
 
 
+def test_discovery_adapter_keywords_remain_product_specific():
+    listings = parse_1688_json_payload(
+        {
+            "items": [
+                {
+                    "title": "M48 to M54 telescope adapter",
+                    "price": "12.40",
+                    "url": "https://detail.1688.com/offer/9002.html",
+                }
+            ]
+        },
+        source_url="fixture.json",
+    )
+
+    seeds = build_discovery_result(listings).keyword_seeds
+
+    assert [seed.keyword for seed in seeds] == [
+        "m48 to m54 telescope adapter",
+    ]
+    assert all(seed.keyword != "telescope adapter" for seed in seeds)
+
+
 def test_chrome_extension_capture_is_compatible_with_discovery_parser():
     listings = parse_1688_json_payload(
         {
@@ -154,6 +176,32 @@ def test_extension_detail_capture_uses_page_title_for_current_product():
 
     assert listings[0].title == "天文望远镜 M48 M42 转接环"
     assert listings[1].title == "M42 相机转接环"
+
+
+def test_extension_capture_removes_ui_noise_and_cleans_labels():
+    listings = parse_1688_json_payload(
+        {
+            "source": "1688_chrome_extension",
+            "items": [
+                {
+                    "title": "反馈",
+                    "price": "19",
+                    "detailUrl": "https://detail.1688.com/offer/1349447356.html",
+                },
+                {
+                    "title": "M48 转 M54 转接环 @",
+                    "price": "13",
+                    "supplier": "南阳市宇瑾光电科技有限公司旺旺在线",
+                    "detailUrl": "https://detail.1688.com/offer/1070782759608.html",
+                },
+            ],
+        },
+        source_url="extension-capture.json",
+    )
+
+    assert len(listings) == 1
+    assert listings[0].title == "M48 转 M54 转接环"
+    assert listings[0].supplier == "南阳市宇瑾光电科技有限公司"
 
 
 def test_1688_discovery_batch_writes_pipeline_ready_csvs(tmp_path):
