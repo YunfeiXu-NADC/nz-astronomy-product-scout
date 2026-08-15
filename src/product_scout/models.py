@@ -146,6 +146,12 @@ class KeywordMetric(BaseModel):
     bid_high: Decimal | None = None
 
 
+class KeywordSeed(BaseModel):
+    product_id: str
+    keyword: str
+    keyword_cluster: str
+
+
 class KeywordSearchScore(BaseModel):
     product_id: str
     cluster_monthly_searches: dict[str, int]
@@ -214,4 +220,3 @@ class HsMapping(BaseModel):
     mapping_confidence: int
     analyst_notes: str | None = None
     requires_manual_confirmation: bool
-

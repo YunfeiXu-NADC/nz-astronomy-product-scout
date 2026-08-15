@@ -3,11 +3,38 @@ import json
 import sqlite3
 from decimal import Decimal
 
+from product_scout.batch import KeywordRefreshBatchPaths, run_keyword_refresh_batch
 from product_scout.cli import main
-from product_scout.csv_import import import_product_candidates_csv
+from product_scout.csv_import import CSVValidationError, import_product_candidates_csv
+from product_scout.google_ads import GoogleKeywordPlanMetric
 from product_scout.persistence import JsonRepositoryStore, SQLiteRepositoryStore
 from product_scout.pipeline import recalculate_repository
 from product_scout.repository import InMemoryRepository
+
+
+class FakeKeywordPlannerClient:
+    def __init__(self):
+        self.calls = []
+
+    def historical_metrics(self, *, keywords, location, language):
+        self.calls.append(
+            {
+                "keywords": keywords,
+                "location": location,
+                "language": language,
+            }
+        )
+        return [
+            GoogleKeywordPlanMetric(
+                keyword=keyword,
+                monthly_searches=30 if "bahtinov" in keyword else 10,
+                monthly_history=[10, 20, 30],
+                competition_index=50,
+                bid_low="0.25",
+                bid_high="1.00",
+            )
+            for keyword in keywords
+        ]
 
 
 def test_product_candidate_csv_import_parses_low_risk_candidates():
@@ -89,6 +116,81 @@ prod_2,obscure astronomy bracket,obscure_bracket,0,"0|0|0|0|0|0|0|0|0|0|0|0",10,
     assert rows[0]["prelaunch_score"]
     assert rows[0]["confidence"]
     assert int(rows[0]["rank"]) == 1
+
+
+def test_keyword_refresh_batch_writes_metrics_csv_from_seed_csv(tmp_path):
+    products = tmp_path / "products.csv"
+    seeds = tmp_path / "keyword_seeds.csv"
+    output = tmp_path / "keyword_metrics.csv"
+    products.write_text(
+        """id,canonical_name,sku,category,subcategory,product_type,weight_g,length_mm,width_mm,height_mm,hs_code,expected_sell_price_nzd
+prod_1,Bahtinov Mask,BMASK,passive,focus mask,bahtinov_mask,40,90,90,2,9002900000,24.90
+""",
+        encoding="utf-8",
+    )
+    seeds.write_text(
+        """product_id,keyword,keyword_cluster
+prod_1,bahtinov mask,bahtinov_mask
+prod_1,telescope focus mask,bahtinov_mask
+""",
+        encoding="utf-8",
+    )
+    client = FakeKeywordPlannerClient()
+
+    result = run_keyword_refresh_batch(
+        KeywordRefreshBatchPaths(
+            products_csv_path=products,
+            keyword_seeds_csv_path=seeds,
+            output_csv_path=output,
+        ),
+        client,
+    )
+
+    assert result.refreshed_keywords == 2
+    assert client.calls == [
+        {
+            "keywords": ["bahtinov mask", "telescope focus mask"],
+            "location": "New Zealand",
+            "language": "English",
+        }
+    ]
+    rows = list(csv.DictReader(output.open(encoding="utf-8")))
+    assert rows[0]["product_id"] == "prod_1"
+    assert rows[0]["keyword_cluster"] == "bahtinov_mask"
+    assert rows[0]["monthly_history"] == "10|20|30"
+    assert rows[0]["bid_low"] == "0.25"
+
+
+def test_keyword_refresh_batch_rejects_unknown_product_ids(tmp_path):
+    products = tmp_path / "products.csv"
+    seeds = tmp_path / "keyword_seeds.csv"
+    output = tmp_path / "keyword_metrics.csv"
+    products.write_text(
+        """id,canonical_name,sku,category,subcategory,product_type,weight_g,length_mm,width_mm,height_mm,hs_code,expected_sell_price_nzd
+prod_1,Dust Cap,DUST-CAP,passive,dust cap,dust_cap,20,40,40,10,9005900000,14.90
+""",
+        encoding="utf-8",
+    )
+    seeds.write_text(
+        """product_id,keyword,keyword_cluster
+missing_product,dust cap,dust_cap
+""",
+        encoding="utf-8",
+    )
+
+    try:
+        run_keyword_refresh_batch(
+            KeywordRefreshBatchPaths(
+                products_csv_path=products,
+                keyword_seeds_csv_path=seeds,
+                output_csv_path=output,
+            ),
+            FakeKeywordPlannerClient(),
+        )
+    except CSVValidationError as exc:
+        assert "missing_product" in str(exc)
+    else:
+        raise AssertionError("Expected CSVValidationError")
 
 
 def test_json_repository_store_round_trips_pipeline_state(tmp_path):

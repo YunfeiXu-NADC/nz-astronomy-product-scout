@@ -4,13 +4,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .csv_import import (
+    CSVValidationError,
     import_keyword_metrics_csv,
+    import_keyword_seeds_csv,
     import_product_candidates_csv,
     import_shipping_rates_csv,
     import_stats_nz_csv,
     import_supplier_offers_csv,
 )
-from .export import export_opportunities_csv
+from .export import export_keyword_metrics_csv, export_opportunities_csv
+from .google_ads import GoogleAdsKeywordRefreshService, KeywordPlannerClient
 from .persistence import JsonRepositoryStore, SQLiteRepositoryStore
 from .pipeline import recalculate_repository
 from .repository import InMemoryRepository
@@ -39,6 +42,19 @@ class RankBatchResult:
         if not self.ranked_product_ids:
             return None
         return self.repo.score_snapshots[self.ranked_product_ids[0]].sku
+
+
+@dataclass(frozen=True)
+class KeywordRefreshBatchPaths:
+    products_csv_path: str | Path
+    keyword_seeds_csv_path: str | Path
+    output_csv_path: str | Path
+
+
+@dataclass(frozen=True)
+class KeywordRefreshBatchResult:
+    refreshed_keywords: int
+    output_csv_path: str | Path
 
 
 def run_rank_batch(paths: RankBatchPaths) -> RankBatchResult:
@@ -71,5 +87,44 @@ def run_rank_batch(paths: RankBatchPaths) -> RankBatchResult:
     )
 
 
+def run_keyword_refresh_batch(
+    paths: KeywordRefreshBatchPaths,
+    client: KeywordPlannerClient,
+    *,
+    location: str = "New Zealand",
+    language: str = "English",
+) -> KeywordRefreshBatchResult:
+    products = import_product_candidates_csv(_read_text(paths.products_csv_path))
+    seeds = import_keyword_seeds_csv(_read_text(paths.keyword_seeds_csv_path))
+    product_ids = {product.id for product in products}
+    unknown_product_ids = sorted({seed.product_id for seed in seeds} - product_ids)
+    if unknown_product_ids:
+        raise CSVValidationError(
+            "Keyword seeds reference unknown product ids: " + ", ".join(unknown_product_ids)
+        )
+
+    keywords_by_product: dict[str, list[str]] = {}
+    cluster_by_keyword: dict[str, str] = {}
+    for seed in seeds:
+        keywords_by_product.setdefault(seed.product_id, []).append(seed.keyword)
+        cluster_by_keyword[_normalize_keyword(seed.keyword)] = seed.keyword_cluster
+
+    service = GoogleAdsKeywordRefreshService(
+        client,
+        location=location,
+        language=language,
+    )
+    metrics = service.refresh(products, keywords_by_product, cluster_by_keyword)
+    export_keyword_metrics_csv(metrics, paths.output_csv_path)
+    return KeywordRefreshBatchResult(
+        refreshed_keywords=len(metrics),
+        output_csv_path=paths.output_csv_path,
+    )
+
+
 def _read_text(path: str | Path) -> str:
     return Path(path).read_text(encoding="utf-8")
+
+
+def _normalize_keyword(keyword: str) -> str:
+    return " ".join(keyword.lower().split())

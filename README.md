@@ -30,6 +30,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `GET /opportunities` returns ranked opportunities with score and confidence.
 - `GET /opportunities/{id}` returns product, economics, and score detail.
 - `nz-product-scout google-ads-smoke` calls the real Google Ads API Keyword Planner endpoint for a small connectivity check.
+- `nz-product-scout keywords-refresh` reads keyword seeds and writes Google Ads-backed keyword metrics CSV.
 
 ## Run Locally
 
@@ -70,6 +71,27 @@ After `.env` contains the Google Ads developer token, OAuth client, refresh toke
 
 The command uses `New Zealand`, `English`, and REST transport by default, then prints only keyword metric data. It does not create, edit, or manage Google Ads campaigns. Use `--transport grpc` only when the local network supports Google Ads gRPC reliably.
 
+## Refresh Real Keyword Metrics
+
+Create or update `keyword_seeds.csv` with one keyword seed per product and cluster:
+
+```csv
+product_id,keyword,keyword_cluster
+prod_1,m48 t2 adapter,m48_t2_adapter
+prod_1,telescope t adapter,m48_t2_adapter
+```
+
+Then refresh Google Ads historical metrics into the standard keyword metrics CSV used by the ranking pipeline:
+
+```powershell
+.venv\Scripts\python -m product_scout.cli keywords-refresh `
+  --products sample_data/products.csv `
+  --keyword-seeds sample_data/keyword_seeds.csv `
+  --output sample_data/keyword_metrics.csv
+```
+
+After that, rerun the normal rank command. The refresh command uses `New Zealand`, `English`, and REST transport by default.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill only the credentials you actually have. Do not commit `.env`.
@@ -89,7 +111,7 @@ GOOGLE_ADS_API_VERSION
 ## Data Notes
 
 - `schema/postgresql.sql` contains the PostgreSQL schema for production persistence.
-- `sample_data/` contains CSV shapes for supplier offers, shipping rates, HS mapping, and Stats NZ import metrics.
+- `sample_data/` contains CSV shapes for supplier offers, shipping rates, keyword seeds, HS mapping, and Stats NZ import metrics.
 - `product_scout.cli` runs the offline Sprint 1-3 pipeline without starting the API.
 - Real Google Ads API credentials are intentionally not hardcoded; use local `.env` values or inject a client matching `KeywordPlannerClient` in `product_scout.google_ads`.
 - `NZ_Astronomy_Product_Scout_Google_Ads_API_Design.rtf` is a short tool-design document for Google Ads API Basic Access review.

@@ -5,7 +5,8 @@ import json
 import sys
 from typing import Sequence
 
-from .batch import RankBatchPaths, run_rank_batch
+from .batch import KeywordRefreshBatchPaths, RankBatchPaths, run_keyword_refresh_batch, run_rank_batch
+from .csv_import import CSVValidationError
 from .google_ads import (
     GoogleAdsKeywordPlannerClient,
     GoogleAdsRestKeywordPlannerClient,
@@ -34,6 +35,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     google_ads_parser.add_argument("--language")
     google_ads_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
     google_ads_parser.add_argument("--timeout-seconds", type=int, default=30)
+
+    keyword_refresh_parser = subparsers.add_parser("keywords-refresh")
+    keyword_refresh_parser.add_argument("--products", required=True)
+    keyword_refresh_parser.add_argument("--keyword-seeds", required=True)
+    keyword_refresh_parser.add_argument("--output", required=True)
+    keyword_refresh_parser.add_argument("--env-file", default=".env")
+    keyword_refresh_parser.add_argument("--location")
+    keyword_refresh_parser.add_argument("--language")
+    keyword_refresh_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
+    keyword_refresh_parser.add_argument("--timeout-seconds", type=int, default=30)
 
     args = parser.parse_args(argv)
     if args.command == "rank":
@@ -77,6 +88,40 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             json.dumps(
                 [metric.model_dump(mode="json") for metric in metrics],
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "keywords-refresh":
+        try:
+            config = load_google_ads_config(args.env_file)
+            client = (
+                GoogleAdsKeywordPlannerClient(config)
+                if args.transport == "grpc"
+                else GoogleAdsRestKeywordPlannerClient(
+                    config, timeout_seconds=args.timeout_seconds
+                )
+            )
+            result = run_keyword_refresh_batch(
+                KeywordRefreshBatchPaths(
+                    products_csv_path=args.products,
+                    keyword_seeds_csv_path=args.keyword_seeds,
+                    output_csv_path=args.output,
+                ),
+                client,
+                location=args.location or config.geo_target,
+                language=args.language or config.language,
+            )
+        except (CSVValidationError, RuntimeError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "refreshed_keywords": result.refreshed_keywords,
+                    "output_csv_path": str(result.output_csv_path),
+                },
                 ensure_ascii=False,
                 indent=2,
             )

@@ -9,6 +9,7 @@ from .models import (
     HsMapping,
     ImportMetric,
     KeywordMetric,
+    KeywordSeed,
     ProductCandidate,
     ShippingRate,
     SupplierOffer,
@@ -87,6 +88,12 @@ KEYWORD_COLUMNS = {
     "competition_index",
     "bid_low",
     "bid_high",
+}
+
+KEYWORD_SEED_COLUMNS = {
+    "product_id",
+    "keyword",
+    "keyword_cluster",
 }
 
 
@@ -245,6 +252,29 @@ def import_keyword_metrics_csv(csv_text: str) -> list[KeywordMetric]:
             )
         )
     return metrics
+
+
+def import_keyword_seeds_csv(csv_text: str) -> list[KeywordSeed]:
+    rows = _read_rows(csv_text, KEYWORD_SEED_COLUMNS)
+    seeds: list[KeywordSeed] = []
+    seen: set[tuple[str, str]] = set()
+    for row_number, row in enumerate(rows, start=2):
+        product_id = _required_text(row, "product_id", row_number)
+        keyword = _required_text(row, "keyword", row_number)
+        key = (product_id, " ".join(keyword.lower().split()))
+        if key in seen:
+            raise CSVValidationError(
+                f"Duplicate keyword seed '{keyword}' for product '{product_id}' at row {row_number}"
+            )
+        seen.add(key)
+        seeds.append(
+            KeywordSeed(
+                product_id=product_id,
+                keyword=keyword,
+                keyword_cluster=_required_text(row, "keyword_cluster", row_number),
+            )
+        )
+    return seeds
 
 
 def _read_rows(csv_text: str, required_columns: set[str]) -> list[dict[str, str]]:

@@ -1,0 +1,5 @@
+product_id,keyword,keyword_cluster
+prod_1,m48 t2 adapter,m48_t2_adapter
+prod_1,telescope t adapter,m48_t2_adapter
+prod_2,t2 spacer,t2_spacer
+prod_2,telescope spacer,t2_spacer
