@@ -33,6 +33,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `nz-product-scout google-ads-smoke` calls the real Google Ads API Keyword Planner endpoint for a small connectivity check.
 - `nz-product-scout keywords-refresh` reads keyword seeds and writes Google Ads-backed keyword metrics CSV.
 - `nz-product-scout discover-1688` converts 1688 search/listing HTML or JSON snapshots into pipeline-ready product, supplier-offer, and keyword-seed CSVs.
+- `nz-product-scout capture-1688` opens a dedicated local browser profile for manual login/navigation, then captures the visible 1688 page into auditable evidence plus pipeline-ready CSVs.
 
 ## Run Locally
 
@@ -107,6 +108,29 @@ Use `discover-1688` when you do not already have product CSVs. It can read a sav
 ```
 
 The discovery layer infers V1 target categories such as thread adapters, spacers, nosepiece adapters, camera adapters, brackets, Bahtinov masks, dust caps, and filter cases. Solar, laser, battery, and powered-electronics terms are preserved as risk flags so the existing risk engine can block them during scoring.
+
+## Capture 1688 From A Logged-In Browser
+
+Install the optional browser dependency from the Tsinghua mirror. The default command uses the locally installed Microsoft Edge, so it does not need to download a separate Chromium build.
+
+```powershell
+.venv\Scripts\python -m pip install `
+  -i https://pypi.tuna.tsinghua.edu.cn/simple `
+  --trusted-host pypi.tuna.tsinghua.edu.cn `
+  -e ".[browser]"
+```
+
+Start a capture session:
+
+```powershell
+.venv\Scripts\python -m product_scout.cli capture-1688
+```
+
+A dedicated Edge window opens. Log in normally, complete any CAPTCHA yourself, and navigate to a 1688 search-results or product-detail page. Return to the terminal and press Enter. Each run writes a timestamped directory under `output/1688-captures/` containing `capture.json`, `source.png`, `products.csv`, `supplier_offers.csv`, and `keyword_seeds.csv`.
+
+The browser profile is kept under `.local/1688-browser-profile/` so the login session can be reused. Both the profile and capture output are ignored by Git. Cookies, local storage, and credentials are not copied into `capture.json`. Raw page HTML is not saved unless `--save-html` is explicitly supplied.
+
+This workflow does not automate login, solve CAPTCHAs, evade anti-bot controls, or call undocumented private endpoints. If Microsoft Edge is unavailable, install Playwright Chromium and run with `--browser-channel chromium`.
 
 ## Configuration
 

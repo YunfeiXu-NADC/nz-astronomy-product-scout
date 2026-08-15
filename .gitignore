@@ -11,4 +11,7 @@ __pycache__/
 *.sqlite3
 *.db
 sample_data/repository_state.json
+.local/
+output/1688-captures/
+output/playwright/
 ~$*
