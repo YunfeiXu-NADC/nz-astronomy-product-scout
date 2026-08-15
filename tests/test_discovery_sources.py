@@ -114,6 +114,21 @@ def test_chrome_extension_capture_is_compatible_with_discovery_parser():
     assert listings[0].source_url == "https://detail.1688.com/offer/9001.html"
 
 
+def test_chinese_sales_units_are_expanded():
+    listings = parse_1688_json_payload(
+        {
+            "items": [
+                {"title": "Finder bracket", "price": "26.32", "saleQuantity": "1万+"},
+                {"title": "Dust cap", "price": "5.50", "saleQuantity": "1.2万+"},
+            ]
+        },
+        source_url="extension-capture.json",
+    )
+
+    assert listings[0].monthly_sales_ref == 10000
+    assert listings[1].monthly_sales_ref == 12000
+
+
 def test_1688_discovery_batch_writes_pipeline_ready_csvs(tmp_path):
     source = tmp_path / "1688.json"
     products = tmp_path / "products.csv"

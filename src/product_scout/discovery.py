@@ -365,10 +365,16 @@ def _pick_int(data: dict[str, Any], keys: list[str]) -> int | None:
     if value is None:
         return None
     text = str(value)
-    match = re.search(r"\d+", text.replace(",", ""))
+    match = re.search(r"(\d+(?:\.\d+)?)\s*(万|千|[kw])?", text.replace(",", ""), re.IGNORECASE)
     if not match:
         return None
-    integer = int(match.group(0))
+    multiplier = {
+        "万": Decimal("10000"),
+        "w": Decimal("10000"),
+        "千": Decimal("1000"),
+        "k": Decimal("1000"),
+    }.get((match.group(2) or "").lower(), Decimal("1"))
+    integer = int(Decimal(match.group(1)) * multiplier)
     return integer if integer > 0 else None
 
 

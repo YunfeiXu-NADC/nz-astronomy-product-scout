@@ -13,6 +13,17 @@ function extract1688Capture() {
     }
     return null;
   };
+  const visibleElements = (selector) => Array.from(document.querySelectorAll(selector))
+    .filter((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+    })
+    .sort((left, right) => left.getBoundingClientRect().top - right.getBoundingClientRect().top);
+  const priceFromText = (text) => {
+    const match = clean(text).match(/(?:¥|￥)?\s*(\d+(?:\.\d{1,2})?)/);
+    return match ? match[1] : null;
+  };
   const findCard = (element) => {
     let current = element;
     let best = element;
@@ -79,6 +90,53 @@ function extract1688Capture() {
       supplier: clean(supplierNode && supplierNode.textContent) || "Unknown supplier",
       saleQuantity: salesMatch ? salesMatch[1] : null,
       imageUrl: image && (image.currentSrc || image.src) || null,
+      captureContext: "related_product",
+    };
+  };
+
+  const extractCurrentDetailItem = () => {
+    if (!/\/offer\/\d+/.test(location.pathname)) return null;
+    const metaTitle = document.querySelector('meta[property="og:title"]')?.content;
+    const heading = visibleElements("h1")[0];
+    const title = clean(metaTitle || heading?.textContent || document.title.split(" - ")[0]);
+    const metaPrice = document.querySelector(
+      'meta[property="product:price:amount"], meta[itemprop="price"]'
+    )?.content;
+    const priceNodes = visibleElements([
+      '[class*="price-text"]',
+      '[class*="priceText"]',
+      '[class*="price-num"]',
+      '[class*="priceNum"]',
+      '[class*="price"]',
+    ].join(",")).filter((element) => element.getBoundingClientRect().top < 1200);
+    const price = priceFromText(metaPrice) ||
+      priceNodes.map((element) => priceFromText(element.textContent)).find(Boolean);
+    if (!title || !price) return null;
+
+    const topText = leafTexts(document.body).slice(0, 500);
+    const moqMatch = firstMatch(topText, [
+      /(\d+)\s*(?:件|个|套|只|支|盒|包)\s*(?:起|起批)/,
+      /起批\s*(\d+)/,
+    ]);
+    const salesMatch = firstMatch(topText, [/(?:成交|已售|销量|付款)\s*([\d,.万+]+)/]);
+    const supplierNode = visibleElements([
+      '[class*="company-name"]',
+      '[class*="companyName"]',
+      '[class*="supplier"]',
+      '[class*="shop-name"]',
+    ].join(","))[0];
+    const image = document.querySelector(
+      '[class*="main"] img, [class*="gallery"] img, meta[property="og:image"]'
+    );
+    return {
+      title,
+      price,
+      moq: moqMatch ? parseInt(moqMatch[1], 10) : 1,
+      detailUrl: location.href.split("?")[0],
+      supplier: clean(supplierNode?.textContent) || "Unknown supplier",
+      saleQuantity: salesMatch ? salesMatch[1] : null,
+      imageUrl: image?.content || image?.currentSrc || image?.src || null,
+      captureContext: "current_product",
     };
   };
 
@@ -90,6 +148,8 @@ function extract1688Capture() {
     '[data-offerid]',
   ].join(',')));
   const items = new Map();
+  const currentItem = extractCurrentDetailItem();
+  if (currentItem) items.set(currentItem.detailUrl, currentItem);
   for (const candidate of candidates) {
     const sourceUrl = resolveOfferUrl(candidate);
     if (!sourceUrl || items.has(sourceUrl)) continue;
