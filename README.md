@@ -29,6 +29,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `POST /batches/rank` reads local CSV paths, writes a ranked opportunity CSV, and can persist a local SQLite state file.
 - `GET /opportunities` returns ranked opportunities with score and confidence.
 - `GET /opportunities/{id}` returns product, economics, and score detail.
+- `nz-product-scout google-ads-smoke` calls the real Google Ads API Keyword Planner endpoint for a small connectivity check.
 
 ## Run Locally
 
@@ -57,6 +58,18 @@ The API will be available at `http://127.0.0.1:8000`.
 This produces a sorted opportunity CSV with rank, score components, confidence, status, and rejection reasons.
 Use `--sqlite-store sample_data/repository_state.sqlite` for a local SQLite state file, or pass a `.db` / `.sqlite` path to `--store`.
 
+## Test Google Ads API Connectivity
+
+After `.env` contains the Google Ads developer token, OAuth client, refresh token, manager customer ID, and client customer ID, run:
+
+```powershell
+.venv\Scripts\python -m product_scout.cli google-ads-smoke `
+  --keyword "telescope adapter" `
+  --keyword "bahtinov mask"
+```
+
+The command uses `New Zealand`, `English`, and REST transport by default, then prints only keyword metric data. It does not create, edit, or manage Google Ads campaigns. Use `--transport grpc` only when the local network supports Google Ads gRPC reliably.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill only the credentials you actually have. Do not commit `.env`.
@@ -70,6 +83,7 @@ GOOGLE_ADS_CLIENT_SECRET
 GOOGLE_ADS_REFRESH_TOKEN
 GOOGLE_ADS_CUSTOMER_ID
 GOOGLE_ADS_LOGIN_CUSTOMER_ID
+GOOGLE_ADS_API_VERSION
 ```
 
 ## Data Notes
@@ -77,7 +91,7 @@ GOOGLE_ADS_LOGIN_CUSTOMER_ID
 - `schema/postgresql.sql` contains the PostgreSQL schema for production persistence.
 - `sample_data/` contains CSV shapes for supplier offers, shipping rates, HS mapping, and Stats NZ import metrics.
 - `product_scout.cli` runs the offline Sprint 1-3 pipeline without starting the API.
-- Real Google Ads API credentials are intentionally not hardcoded; inject a client matching `KeywordPlannerClient` in `product_scout.google_ads`.
+- Real Google Ads API credentials are intentionally not hardcoded; use local `.env` values or inject a client matching `KeywordPlannerClient` in `product_scout.google_ads`.
 - `NZ_Astronomy_Product_Scout_Google_Ads_API_Design.rtf` is a short tool-design document for Google Ads API Basic Access review.
 
 ## Compliance Notes

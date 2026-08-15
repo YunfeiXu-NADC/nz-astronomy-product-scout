@@ -5,7 +5,10 @@ description = "Data-driven V1 product scout for NZ astronomy ecommerce opportuni
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
+    "google-ads>=31.3.0",
+    "google-auth>=2.14.1",
     "pydantic>=2.8.0",
+    "requests>=2.33.0",
     "uvicorn>=0.30.0",
 ]
 

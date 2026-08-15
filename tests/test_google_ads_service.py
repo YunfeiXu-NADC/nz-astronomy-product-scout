@@ -1,6 +1,11 @@
 from product_scout.google_ads import (
+    GoogleAdsCredentialConfig,
     GoogleAdsKeywordRefreshService,
     GoogleKeywordPlanMetric,
+    _geo_target_resource_name,
+    _language_resource_name,
+    _metric_from_rest_result,
+    load_google_ads_config,
 )
 from product_scout.models import ProductCandidate
 
@@ -63,3 +68,67 @@ def test_google_ads_refresh_enforces_new_zealand_english_and_clusters_synonyms()
     assert metrics[0].product_id == "prod_1"
     assert metrics[0].keyword_cluster == "m48_t2_adapter"
     assert metrics[0].monthly_searches == 210
+
+
+def test_load_google_ads_config_reads_dotenv_and_normalizes_customer_ids(tmp_path):
+    env_path = tmp_path / ".env"
+    env_path.write_text(
+        "\n".join(
+            [
+                "GOOGLE_ADS_DEVELOPER_TOKEN=dev-token",
+                "GOOGLE_ADS_CLIENT_ID=client-id",
+                "GOOGLE_ADS_CLIENT_SECRET=client-secret",
+                "GOOGLE_ADS_REFRESH_TOKEN=refresh-token",
+                "GOOGLE_ADS_CUSTOMER_ID=250-282-4242",
+                "GOOGLE_ADS_LOGIN_CUSTOMER_ID=770-615-0693",
+                "GOOGLE_ADS_GEO_TARGET=New Zealand",
+                "GOOGLE_ADS_LANGUAGE=English",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_google_ads_config(env_path)
+
+    assert config == GoogleAdsCredentialConfig(
+        developer_token="dev-token",
+        client_id="client-id",
+        client_secret="client-secret",
+        refresh_token="refresh-token",
+        customer_id="2502824242",
+        login_customer_id="7706150693",
+        geo_target="New Zealand",
+        language="English",
+    )
+
+
+def test_google_ads_resource_helpers_support_v1_new_zealand_english_defaults():
+    assert _geo_target_resource_name("New Zealand") == "geoTargetConstants/2554"
+    assert _geo_target_resource_name("2554") == "geoTargetConstants/2554"
+    assert _language_resource_name("English") == "languageConstants/1000"
+    assert _language_resource_name("1000") == "languageConstants/1000"
+
+
+def test_google_ads_rest_result_parser_preserves_month_order_and_bids():
+    metric = _metric_from_rest_result(
+        {
+            "text": "Bahtinov Mask",
+            "keywordMetrics": {
+                "avgMonthlySearches": "70",
+                "competitionIndex": "34",
+                "lowTopOfPageBidMicros": "500000",
+                "highTopOfPageBidMicros": "1250000",
+                "monthlySearchVolumes": [
+                    {"year": "2025", "month": "FEBRUARY", "monthlySearches": "60"},
+                    {"year": "2025", "month": "JANUARY", "monthlySearches": "50"},
+                ],
+            },
+        }
+    )
+
+    assert metric.keyword == "bahtinov mask"
+    assert metric.monthly_searches == 70
+    assert metric.monthly_history == [50, 60]
+    assert metric.competition_index == 34
+    assert str(metric.bid_low) == "0.5"
+    assert str(metric.bid_high) == "1.25"

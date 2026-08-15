@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import json
+import sys
 from typing import Sequence
 
 from .batch import RankBatchPaths, run_rank_batch
+from .google_ads import (
+    GoogleAdsKeywordPlannerClient,
+    GoogleAdsRestKeywordPlannerClient,
+    load_google_ads_config,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -19,6 +26,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     rank_parser.add_argument("--output", required=True)
     rank_parser.add_argument("--store")
     rank_parser.add_argument("--sqlite-store")
+
+    google_ads_parser = subparsers.add_parser("google-ads-smoke")
+    google_ads_parser.add_argument("--env-file", default=".env")
+    google_ads_parser.add_argument("--keyword", action="append", dest="keywords")
+    google_ads_parser.add_argument("--location")
+    google_ads_parser.add_argument("--language")
+    google_ads_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
+    google_ads_parser.add_argument("--timeout-seconds", type=int, default=30)
 
     args = parser.parse_args(argv)
     if args.command == "rank":
@@ -37,6 +52,33 @@ def main(argv: Sequence[str] | None = None) -> int:
                 output_csv_path=args.output,
                 json_store_path=json_store,
                 sqlite_store_path=sqlite_store,
+            )
+        )
+        return 0
+    if args.command == "google-ads-smoke":
+        config = load_google_ads_config(args.env_file)
+        client = (
+            GoogleAdsKeywordPlannerClient(config)
+            if args.transport == "grpc"
+            else GoogleAdsRestKeywordPlannerClient(
+                config, timeout_seconds=args.timeout_seconds
+            )
+        )
+        keywords = args.keywords or ["telescope adapter", "bahtinov mask"]
+        try:
+            metrics = client.historical_metrics(
+                keywords=keywords,
+                location=args.location or config.geo_target,
+                language=args.language or config.language,
+            )
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                [metric.model_dump(mode="json") for metric in metrics],
+                ensure_ascii=False,
+                indent=2,
             )
         )
         return 0
