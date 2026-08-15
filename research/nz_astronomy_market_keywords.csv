@@ -1,0 +1,40 @@
+segment,intent_cluster,keyword,role
+core_market,telescope,telescope,head
+core_market,telescope,telescopes nz,local_modifier
+core_market,telescope,telescope for beginners,commercial
+core_market,telescope,beginner telescope,commercial
+core_market,telescope,kids telescope,commercial
+core_market,astronomy,astronomy,head
+core_market,astronomy,astronomy nz,local_modifier
+core_market,stargazing,stargazing,head
+core_market,stargazing,stargazing nz,local_modifier
+core_market,astrophotography,astrophotography,head
+core_market,astrophotography,astrophotography nz,local_modifier
+functional_accessories,accessories,telescope accessories,commercial
+functional_accessories,eyepiece,telescope eyepiece,commercial
+functional_accessories,mount,telescope mount,commercial
+functional_accessories,tripod,telescope tripod,commercial
+functional_accessories,camera_adapter,telescope camera adapter,commercial
+functional_accessories,camera_adapter,t ring adapter,commercial
+functional_accessories,camera_adapter,m42 telescope adapter,commercial
+functional_accessories,camera_adapter,m48 telescope adapter,commercial
+functional_accessories,camera_adapter,t2 telescope adapter,commercial
+functional_accessories,bahtinov_mask,bahtinov mask,commercial
+functional_accessories,filter,telescope filter,commercial
+functional_accessories,dust_cap,telescope dust cap,commercial
+functional_accessories,finder_scope,finder scope,commercial
+functional_accessories,finder_scope,finder scope bracket,commercial
+functional_accessories,case,telescope case,commercial
+functional_accessories,case,telescope bag,commercial
+astronomy_gifts,gifts,astronomy gifts,commercial
+astronomy_gifts,gifts,space gifts,commercial
+astronomy_gifts,star_map,star map,commercial
+astronomy_gifts,poster,constellation poster,commercial
+astronomy_gifts,poster,astronomy poster,commercial
+astronomy_gifts,moon_lamp,moon lamp,commercial
+astronomy_gifts,star_projector,planetarium projector,commercial
+astronomy_gifts,star_projector,star projector,commercial
+education_stem,solar_system_model,solar system model,commercial
+education_stem,stem_toys,stem toys nz,local_modifier
+matariki,matariki_gifts,matariki gifts,cultural_seasonal
+matariki,matariki_decorations,matariki decorations,cultural_seasonal

@@ -31,6 +31,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `GET /opportunities` returns ranked opportunities with score and confidence.
 - `GET /opportunities/{id}` returns product, economics, and score detail.
 - `nz-product-scout google-ads-smoke` calls the real Google Ads API Keyword Planner endpoint for a small connectivity check.
+- `nz-product-scout market-scan` refreshes a market-level keyword taxonomy and writes both raw metrics and synonym-safe segment summaries.
 - `nz-product-scout keywords-refresh` reads keyword seeds and writes Google Ads-backed keyword metrics CSV.
 - `nz-product-scout discover-1688` converts 1688 search/listing HTML or JSON snapshots into pipeline-ready product, supplier-offer, and keyword-seed CSVs.
 - `nz-product-scout capture-1688` opens a dedicated local browser profile for manual login/navigation, then captures the visible 1688 page into auditable evidence plus pipeline-ready CSVs.
@@ -73,6 +74,19 @@ After `.env` contains the Google Ads developer token, OAuth client, refresh toke
 ```
 
 The command uses `New Zealand`, `English`, and REST transport by default, then prints only keyword metric data. It does not create, edit, or manage Google Ads campaigns. Use `--transport grpc` only when the local network supports Google Ads gRPC reliably.
+
+## Scan The NZ Astronomy Market
+
+The Phase 0 market scan runs before 1688 sourcing. It groups related search terms into intent clusters and uses only the strongest keyword in each cluster when calculating a conservative segment demand index, so close synonyms are not added together.
+
+```powershell
+.venv\Scripts\python -m product_scout.cli market-scan `
+  --seeds research\nz_astronomy_market_keywords.csv `
+  --output research\nz_astronomy_market_metrics.csv `
+  --summary research\nz_astronomy_market_summary.csv
+```
+
+The committed seed taxonomy is astronomy-specific. The mechanics are reusable, but V1 deliberately does not widen the product scope until the astronomy path has been validated.
 
 ## Refresh Real Keyword Metrics
 

@@ -1,0 +1,40 @@
+segment,intent_cluster,keyword,role,monthly_searches,monthly_history,competition_index,bid_low,bid_high
+core_market,telescope,telescope,head,2900,2400|2400|2400|3600|3600|2400|2400|3600|2900|3600|3600|2900,100,1.28492,8.443895
+core_market,telescope,telescopes nz,local_modifier,1600,1300|1300|1300|2400|2400|1600|1300|1600|1600|1600|1600|1600,100,1.275235,8.591204
+core_market,telescope,telescope for beginners,commercial,50,50|50|30|70|70|40|50|70|70|70|70|70,100,0.941424,6.684026
+core_market,telescope,beginner telescope,commercial,0,,,,
+core_market,telescope,kids telescope,commercial,0,,,,
+core_market,astronomy,astronomy,head,1900,2400|1600|1900|1900|1600|1300|1900|2400|2400|1900|2400|1600,1,1.077065,10.073329
+core_market,astronomy,astronomy nz,local_modifier,50,70|50|50|30|50|50|50|90|50|70|70|50,14,1.485255,6.224935
+core_market,stargazing,stargazing,head,1600,1600|1300|1300|1600|1900|1600|1600|1600|1300|1600|1300|1300,13,1.821042,9.610056
+core_market,stargazing,stargazing nz,local_modifier,110,110|70|390|110|110|110|90|110|70|70|70|70,17,1.578452,5.288359
+core_market,astrophotography,astrophotography,head,320,320|260|320|320|260|260|260|480|320|390|390|320,11,0.207855,16.477347
+core_market,astrophotography,astrophotography nz,local_modifier,20,20|20|40|10|30|20|20|10|10|30|20|40,34,,
+functional_accessories,accessories,telescope accessories,commercial,10,10|10|10|10|10|20|10|10|10|10|20|10,,,
+functional_accessories,eyepiece,telescope eyepiece,commercial,30,20|20|40|20|20|30|30|30|30|30|30|30,79,,
+functional_accessories,mount,telescope mount,commercial,20,20|10|20|20|30|30|20|10|30|20|20|10,86,,
+functional_accessories,tripod,telescope tripod,commercial,30,10|20|20|30|30|30|40|40|50|30|30|40,99,2.144074,6.729748
+functional_accessories,camera_adapter,telescope camera adapter,commercial,10,10|10|10|10|10|10|10|10|10|10|10|10,98,,
+functional_accessories,camera_adapter,t ring adapter,commercial,10,10|10|0|10|10|0|10|10|10|10|10|10,100,,
+functional_accessories,camera_adapter,m42 telescope adapter,commercial,10,0|0|0|0|0|0|0|0|10|0|0|10,100,,
+functional_accessories,camera_adapter,m48 telescope adapter,commercial,0,,,,
+functional_accessories,camera_adapter,t2 telescope adapter,commercial,10,0|0|0|0|0|0|0|0|10|0|0|0,,,
+functional_accessories,bahtinov_mask,bahtinov mask,commercial,30,10|40|20|20|30|40|40|40|40|50|40|50,56,,
+functional_accessories,filter,telescope filter,commercial,10,10|0|0|10|10|10|10|10|10|10|10|10,52,,
+functional_accessories,dust_cap,telescope dust cap,commercial,10,0|0|0|10|0|0|0|10|0|10|10|10,50,,
+functional_accessories,finder_scope,finder scope,commercial,10,10|10|20|10|10|10|10|10|10|10|10|10,84,,
+functional_accessories,finder_scope,finder scope bracket,commercial,10,0|0|0|10|0|0|0|0|0|0|0|0,,,
+functional_accessories,case,telescope case,commercial,10,0|0|10|10|10|10|10|10|10|10|10|10,79,,
+functional_accessories,case,telescope bag,commercial,10,10|10|10|10|10|10|10|10|10|10|10|10,100,,
+astronomy_gifts,gifts,astronomy gifts,commercial,10,10|10|10|20|20|10|10|10|10|10|10|10,100,,
+astronomy_gifts,gifts,space gifts,commercial,20,10|10|20|40|30|10|20|20|10|20|10|10,93,,
+astronomy_gifts,star_map,star map,commercial,480,390|320|320|390|390|390|480|480|480|480|590|590,78,1.888488,9.000985
+astronomy_gifts,poster,constellation poster,commercial,10,10|10|10|10|10|10|10|10|10|10|10|10,88,,
+astronomy_gifts,poster,astronomy poster,commercial,10,10|10|10|10|10|10|10|10|10|10|10|10,4,,
+astronomy_gifts,moon_lamp,moon lamp,commercial,210,210|170|210|260|390|210|170|170|210|210|210|210,100,,
+astronomy_gifts,star_projector,planetarium projector,commercial,50,50|30|50|140|90|50|20|40|40|50|50|70,100,3.025404,8.81565
+astronomy_gifts,star_projector,star projector,commercial,210,170|170|170|260|320|140|110|140|170|210|320|390,100,2.090826,8.74007
+education_stem,solar_system_model,solar system model,commercial,170,210|110|210|170|140|90|110|140|210|260|260|170,91,2.957351,13.4892
+education_stem,stem_toys,stem toys nz,local_modifier,110,70|90|110|260|320|110|70|70|90|70|90|90,99,1.074684,5.804153
+matariki,matariki_gifts,matariki gifts,cultural_seasonal,50,10|10|10|10|10|10|10|10|30|70|260|260,100,2.394825,8.998186
+matariki,matariki_decorations,matariki decorations,cultural_seasonal,260,20|10|10|10|10|20|20|40|70|260|1300|1000,99,2.490477,14.100085

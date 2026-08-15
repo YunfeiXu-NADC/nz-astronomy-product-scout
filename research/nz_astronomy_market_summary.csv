@@ -1,0 +1,6 @@
+segment,intent_clusters,nonzero_clusters,nonzero_cluster_share,conservative_demand_index,median_cluster_searches,top_keyword,top_keyword_searches,peak_to_average_ratio
+core_market,4,4,100.0,6720,1750.0,telescope,2900,1.20
+astronomy_gifts,5,5,100.0,930,210.0,star map,480,1.34
+matariki,2,2,100.0,310,155.0,matariki decorations,260,5.39
+education_stem,2,2,100.0,280,140.0,solar system model,170,1.57
+functional_accessories,10,10,100.0,170,10.0,telescope tripod,30,1.21

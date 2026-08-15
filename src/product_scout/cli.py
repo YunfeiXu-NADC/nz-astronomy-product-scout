@@ -22,6 +22,14 @@ from .google_ads import (
     GoogleAdsRestKeywordPlannerClient,
     load_google_ads_config,
 )
+from .market_scan import (
+    MarketSeedValidationError,
+    export_market_metrics_csv,
+    export_market_summary_csv,
+    import_market_seeds_csv,
+    run_market_scan,
+    summarize_market_segments,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -45,6 +53,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     google_ads_parser.add_argument("--language")
     google_ads_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
     google_ads_parser.add_argument("--timeout-seconds", type=int, default=30)
+
+    market_scan_parser = subparsers.add_parser("market-scan")
+    market_scan_parser.add_argument("--seeds", required=True)
+    market_scan_parser.add_argument("--output", required=True)
+    market_scan_parser.add_argument("--summary", required=True)
+    market_scan_parser.add_argument("--env-file", default=".env")
+    market_scan_parser.add_argument("--location")
+    market_scan_parser.add_argument("--language")
+    market_scan_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
+    market_scan_parser.add_argument("--timeout-seconds", type=int, default=30)
 
     keyword_refresh_parser = subparsers.add_parser("keywords-refresh")
     keyword_refresh_parser.add_argument("--products", required=True)
@@ -118,6 +136,43 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             json.dumps(
                 [metric.model_dump(mode="json") for metric in metrics],
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "market-scan":
+        try:
+            config = load_google_ads_config(args.env_file)
+            client = (
+                GoogleAdsKeywordPlannerClient(config)
+                if args.transport == "grpc"
+                else GoogleAdsRestKeywordPlannerClient(
+                    config, timeout_seconds=args.timeout_seconds
+                )
+            )
+            with open(args.seeds, encoding="utf-8") as handle:
+                seeds = import_market_seeds_csv(handle.read())
+            rows = run_market_scan(
+                seeds,
+                client,
+                location=args.location or config.geo_target,
+                language=args.language or config.language,
+            )
+            summaries = summarize_market_segments(rows)
+            export_market_metrics_csv(rows, args.output)
+            export_market_summary_csv(summaries, args.summary)
+        except (MarketSeedValidationError, OSError, RuntimeError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "keywords": len(rows),
+                    "segments": len(summaries),
+                    "output_csv_path": args.output,
+                    "summary_csv_path": args.summary,
+                },
                 ensure_ascii=False,
                 indent=2,
             )
