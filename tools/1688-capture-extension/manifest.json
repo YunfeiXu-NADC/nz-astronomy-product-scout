@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "NZ Product Scout - 1688 Capture",
+  "version": "0.1.0",
+  "description": "从当前 1688 页面采集可见商品，供本地选品分析使用。",
+  "permissions": ["activeTab", "downloads", "scripting"],
+  "action": {
+    "default_title": "采集 1688 商品",
+    "default_popup": "popup.html"
+  }
+}

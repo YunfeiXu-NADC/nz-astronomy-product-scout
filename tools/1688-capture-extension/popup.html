@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>1688 商品采集</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="mark">1688</span>
+        <div>
+          <h1>商品采集</h1>
+          <p>仅采集当前页面</p>
+        </div>
+      </header>
+      <button id="capture" type="button">采集当前页面</button>
+      <p id="status" class="status" role="status">请先打开搜索结果页或商品详情页。</p>
+      <footer>不会导出 Cookie 或登录凭据。</footer>
+    </main>
+    <script src="extractor.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

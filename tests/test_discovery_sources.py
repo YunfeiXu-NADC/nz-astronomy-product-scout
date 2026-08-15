@@ -86,6 +86,34 @@ def test_discovery_result_builds_products_supplier_offers_and_keyword_seeds():
     assert result.products[1].safety_risk == "solar_observation,battery,powered_electronics"
 
 
+def test_chrome_extension_capture_is_compatible_with_discovery_parser():
+    listings = parse_1688_json_payload(
+        {
+            "source": "1688_chrome_extension",
+            "source_url": "https://s.1688.com/selloffer/offer_search.htm",
+            "items": [
+                {
+                    "title": "M48 telescope camera adapter",
+                    "price": "12.40",
+                    "moq": 10,
+                    "detailUrl": "https://detail.1688.com/offer/9001.html",
+                    "supplier": "Astronomy CNC",
+                    "saleQuantity": "120",
+                    "imageUrl": "https://cbu01.alicdn.com/img/ibank/example.jpg",
+                }
+            ],
+        },
+        source_url="extension-capture.json",
+    )
+
+    assert len(listings) == 1
+    assert listings[0].title == "M48 telescope camera adapter"
+    assert listings[0].unit_price_cny == Decimal("12.40")
+    assert listings[0].moq == 10
+    assert listings[0].monthly_sales_ref == 120
+    assert listings[0].source_url == "https://detail.1688.com/offer/9001.html"
+
+
 def test_1688_discovery_batch_writes_pipeline_ready_csvs(tmp_path):
     source = tmp_path / "1688.json"
     products = tmp_path / "products.csv"

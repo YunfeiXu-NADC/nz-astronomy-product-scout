@@ -132,6 +132,25 @@ The browser profile is kept under `.local/1688-browser-profile/` so the login se
 
 This workflow does not automate login, solve CAPTCHAs, evade anti-bot controls, or call undocumented private endpoints. If Microsoft Edge is unavailable, install Playwright Chromium and run with `--browser-channel chromium`.
 
+### Normal Chrome Fallback
+
+If the isolated Playwright browser cannot complete the 1688/Taobao login flow, use the local extension in `tools/1688-capture-extension/` with the normal Chrome profile that can already log in:
+
+1. Open `chrome://extensions` and enable Developer mode.
+2. Choose **Load unpacked** and select `tools/1688-capture-extension/`.
+3. Open a logged-in 1688 search-results or product-detail page.
+4. Open the extension and choose **Capture current page**.
+
+The extension downloads a normalized `1688-capture-*.json` file without cookies or credentials. Convert it through the existing discovery pipeline:
+
+```powershell
+.venv\Scripts\python -m product_scout.cli discover-1688 `
+  --source-json "$env:USERPROFILE\Downloads\1688-capture-<timestamp>.json" `
+  --output-products output\products.csv `
+  --output-suppliers output\supplier_offers.csv `
+  --output-keyword-seeds output\keyword_seeds.csv
+```
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill only the credentials you actually have. Do not commit `.env`.
