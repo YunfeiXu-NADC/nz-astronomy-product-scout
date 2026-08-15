@@ -1,5 +1,6 @@
 product_id,keyword,keyword_cluster,monthly_searches,monthly_history,competition_index,bid_low,bid_high
-prod_1,m48 t2 adapter,m48_t2_adapter,0,0|0|0|0|0|0|0|0|0|0|0,,,
-prod_1,telescope t adapter,m48_t2_adapter,10,0|10|10|0|10|10|10|0|0|0|0,,,
-prod_2,t2 spacer,t2_spacer,10,0|0|0|0|10|0|0|0|0|0|0|10,,,
-prod_2,telescope spacer,t2_spacer,0,,,,
+disc_1bc8494c97,spacer,spacer,480,590|480|390|390|320|320|480|480|390|480|480|590,44,0.813418,11.635264
+disc_1bc8494c97,t2 5mm spacer extension ring,spacer,0,,,,
+disc_5b5fe670d1,m48 to t2 telescope adapter,thread_adapter,0,,,,
+disc_5b5fe670d1,telescope adapter,thread_adapter,10,10|0|0|10|0|0|10|10|0|0|10|0,57,,
+disc_5b5fe670d1,thread adapter,thread_adapter,50,40|70|40|50|40|70|40|40|30|40|40|50,63,,

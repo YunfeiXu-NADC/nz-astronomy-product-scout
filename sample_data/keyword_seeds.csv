@@ -1,5 +1,6 @@
 product_id,keyword,keyword_cluster
-prod_1,m48 t2 adapter,m48_t2_adapter
-prod_1,telescope t adapter,m48_t2_adapter
-prod_2,t2 spacer,t2_spacer
-prod_2,telescope spacer,t2_spacer
+disc_5b5fe670d1,m48 to t2 telescope adapter,thread_adapter
+disc_5b5fe670d1,thread adapter,thread_adapter
+disc_5b5fe670d1,telescope adapter,thread_adapter
+disc_1bc8494c97,t2 5mm spacer extension ring,spacer
+disc_1bc8494c97,spacer,spacer

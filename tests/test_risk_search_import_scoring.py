@@ -114,4 +114,4 @@ def test_prelaunch_ranking_uses_evidence_chain_not_margin_alone():
     assert ranked[0].product_id == "p1"
     assert ranked[0].prelaunch_score > ranked[1].prelaunch_score
     assert ranked[1].confidence < ranked[0].confidence
-
+    assert ranked[1].rejection_reasons == ["prelaunch_score_below_70"]

@@ -5,8 +5,16 @@ import json
 import sys
 from typing import Sequence
 
-from .batch import KeywordRefreshBatchPaths, RankBatchPaths, run_keyword_refresh_batch, run_rank_batch
+from .batch import (
+    Discover1688BatchPaths,
+    KeywordRefreshBatchPaths,
+    RankBatchPaths,
+    run_1688_discovery_batch,
+    run_keyword_refresh_batch,
+    run_rank_batch,
+)
 from .csv_import import CSVValidationError
+from .discovery import DiscoverySourceError
 from .google_ads import (
     GoogleAdsKeywordPlannerClient,
     GoogleAdsRestKeywordPlannerClient,
@@ -45,6 +53,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     keyword_refresh_parser.add_argument("--language")
     keyword_refresh_parser.add_argument("--transport", choices=["rest", "grpc"], default="rest")
     keyword_refresh_parser.add_argument("--timeout-seconds", type=int, default=30)
+
+    discover_parser = subparsers.add_parser("discover-1688")
+    discover_source = discover_parser.add_mutually_exclusive_group(required=True)
+    discover_source.add_argument("--source-url")
+    discover_source.add_argument("--source-html")
+    discover_source.add_argument("--source-json")
+    discover_parser.add_argument("--output-products", required=True)
+    discover_parser.add_argument("--output-suppliers", required=True)
+    discover_parser.add_argument("--output-keyword-seeds", required=True)
+    discover_parser.add_argument("--limit", type=int, default=100)
 
     args = parser.parse_args(argv)
     if args.command == "rank":
@@ -121,6 +139,35 @@ def main(argv: Sequence[str] | None = None) -> int:
                 {
                     "refreshed_keywords": result.refreshed_keywords,
                     "output_csv_path": str(result.output_csv_path),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "discover-1688":
+        try:
+            result = run_1688_discovery_batch(
+                Discover1688BatchPaths(
+                    source_url=args.source_url,
+                    source_html_path=args.source_html,
+                    source_json_path=args.source_json,
+                    output_products_csv_path=args.output_products,
+                    output_supplier_offers_csv_path=args.output_suppliers,
+                    output_keyword_seeds_csv_path=args.output_keyword_seeds,
+                    limit=args.limit,
+                )
+            )
+        except (DiscoverySourceError, OSError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "discovered_listings": result.discovered_listings,
+                    "products_csv_path": str(result.output_products_csv_path),
+                    "supplier_offers_csv_path": str(result.output_supplier_offers_csv_path),
+                    "keyword_seeds_csv_path": str(result.output_keyword_seeds_csv_path),
                 },
                 ensure_ascii=False,
                 indent=2,

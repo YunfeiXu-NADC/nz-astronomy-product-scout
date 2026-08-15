@@ -152,6 +152,37 @@ class KeywordSeed(BaseModel):
     keyword_cluster: str
 
 
+class SourceListing(BaseModel):
+    source: str = "1688"
+    source_url: str
+    title: str
+    unit_price_cny: Decimal
+    moq: int = 1
+    weight_g: int = 50
+    length_mm: int = 80
+    width_mm: int = 80
+    height_mm: int = 20
+    domestic_shipping_cny: Decimal = Decimal("0")
+    supplier: str = "Unknown supplier"
+    monthly_sales_ref: int | None = None
+    lead_time_days: int = 7
+    image_url: str | None = None
+
+    @field_validator("unit_price_cny", "domestic_shipping_cny")
+    @classmethod
+    def listing_money_must_not_be_negative(cls, value: Decimal) -> Decimal:
+        if value < 0:
+            raise ValueError("money values must not be negative")
+        return value
+
+    @field_validator("moq", "weight_g", "length_mm", "width_mm", "height_mm", "lead_time_days")
+    @classmethod
+    def listing_integer_values_must_be_positive(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("integer values must be positive")
+        return value
+
+
 class KeywordSearchScore(BaseModel):
     product_id: str
     cluster_monthly_searches: dict[str, int]

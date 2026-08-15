@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "title": "M48 to T2 telescope adapter",
+      "price": "12.40",
+      "moq": 10,
+      "source_url": "https://detail.1688.com/offer/example-m48.html",
+      "supplier": "Astronomy CNC",
+      "monthly_sales_ref": 120,
+      "weight_g": 32,
+      "length_mm": 48,
+      "width_mm": 48,
+      "height_mm": 12,
+      "domestic_shipping_cny": "4.50",
+      "lead_time_days": 5
+    },
+    {
+      "title": "T2 5mm spacer extension ring",
+      "price": "8.20",
+      "moq": 20,
+      "source_url": "https://detail.1688.com/offer/example-spacer.html",
+      "supplier": "Optics Parts Co",
+      "monthly_sales_ref": 180,
+      "weight_g": 18,
+      "length_mm": 42,
+      "width_mm": 42,
+      "height_mm": 5,
+      "domestic_shipping_cny": "4.00",
+      "lead_time_days": 6
+    }
+  ]
+}

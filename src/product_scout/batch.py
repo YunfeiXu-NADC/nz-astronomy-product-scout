@@ -12,7 +12,20 @@ from .csv_import import (
     import_stats_nz_csv,
     import_supplier_offers_csv,
 )
-from .export import export_keyword_metrics_csv, export_opportunities_csv
+from .discovery import (
+    DiscoverySourceError,
+    build_discovery_result,
+    fetch_1688_html,
+    parse_1688_html,
+    parse_1688_json_payload,
+)
+from .export import (
+    export_keyword_metrics_csv,
+    export_keyword_seeds_csv,
+    export_opportunities_csv,
+    export_products_csv,
+    export_supplier_offers_csv,
+)
 from .google_ads import GoogleAdsKeywordRefreshService, KeywordPlannerClient
 from .persistence import JsonRepositoryStore, SQLiteRepositoryStore
 from .pipeline import recalculate_repository
@@ -55,6 +68,25 @@ class KeywordRefreshBatchPaths:
 class KeywordRefreshBatchResult:
     refreshed_keywords: int
     output_csv_path: str | Path
+
+
+@dataclass(frozen=True)
+class Discover1688BatchPaths:
+    output_products_csv_path: str | Path
+    output_supplier_offers_csv_path: str | Path
+    output_keyword_seeds_csv_path: str | Path
+    source_html_path: str | Path | None = None
+    source_json_path: str | Path | None = None
+    source_url: str | None = None
+    limit: int = 100
+
+
+@dataclass(frozen=True)
+class Discover1688BatchResult:
+    discovered_listings: int
+    output_products_csv_path: str | Path
+    output_supplier_offers_csv_path: str | Path
+    output_keyword_seeds_csv_path: str | Path
 
 
 def run_rank_batch(paths: RankBatchPaths) -> RankBatchResult:
@@ -119,6 +151,53 @@ def run_keyword_refresh_batch(
     return KeywordRefreshBatchResult(
         refreshed_keywords=len(metrics),
         output_csv_path=paths.output_csv_path,
+    )
+
+
+def run_1688_discovery_batch(paths: Discover1688BatchPaths) -> Discover1688BatchResult:
+    source_count = sum(
+        bool(value)
+        for value in [paths.source_html_path, paths.source_json_path, paths.source_url]
+    )
+    if source_count != 1:
+        raise DiscoverySourceError(
+            "Provide exactly one 1688 source: source_html_path, source_json_path, or source_url"
+        )
+
+    if paths.source_html_path:
+        listings = parse_1688_html(
+            _read_text(paths.source_html_path),
+            source_url=str(paths.source_html_path),
+            limit=paths.limit,
+        )
+    elif paths.source_json_path:
+        import json
+
+        listings = parse_1688_json_payload(
+            json.loads(_read_text(paths.source_json_path)),
+            source_url=str(paths.source_json_path),
+            limit=paths.limit,
+        )
+    else:
+        assert paths.source_url is not None
+        listings = parse_1688_html(
+            fetch_1688_html(paths.source_url),
+            source_url=paths.source_url,
+            limit=paths.limit,
+        )
+
+    if not listings:
+        raise DiscoverySourceError("No parseable 1688 listings found in the source")
+
+    result = build_discovery_result(listings)
+    export_products_csv(result.products, paths.output_products_csv_path)
+    export_supplier_offers_csv(result.supplier_offers, paths.output_supplier_offers_csv_path)
+    export_keyword_seeds_csv(result.keyword_seeds, paths.output_keyword_seeds_csv_path)
+    return Discover1688BatchResult(
+        discovered_listings=len(result.listings),
+        output_products_csv_path=paths.output_products_csv_path,
+        output_supplier_offers_csv_path=paths.output_supplier_offers_csv_path,
+        output_keyword_seeds_csv_path=paths.output_keyword_seeds_csv_path,
     )
 
 

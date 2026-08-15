@@ -1,3 +1,3 @@
 rank,product_id,sku,product_name,prelaunch_score,confidence,status,search_demand_score,import_evidence_score,unit_economics_score,logistics_score,supply_quality_score,product_risk_fit_score,rejection_reasons
-1,prod_1,M48-T2,M48 Female to T2 Male Adapter,78.00,72,QUALIFIED,60.00,59.93,88.63,100.00,54.17,100.00,
-2,prod_2,T2-SPACER-5,T2 5mm Spacer,75.24,72,REJECT,72.50,59.93,69.00,100.00,54.17,100.00,contribution_profit_below_15_nzd
+1,disc_1bc8494c97,T2-5MM-SPACER-EXTENSION-RING,T2 5mm spacer extension ring,79.30,72,REJECT,88.75,59.93,69.00,100.00,54.17,100.00,contribution_profit_below_15_nzd
+2,disc_5b5fe670d1,M48-T2-TELESCOPE-ADAPTER,M48 to T2 telescope adapter,65.33,72,REJECT,9.32,59.93,88.63,100.00,54.17,100.00,prelaunch_score_below_70

@@ -27,10 +27,12 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `POST /keywords/refresh` accepts refreshed Keyword Planner metrics.
 - `POST /imports/refresh` accepts Stats NZ metrics as JSON or CSV text.
 - `POST /batches/rank` reads local CSV paths, writes a ranked opportunity CSV, and can persist a local SQLite state file.
+- `POST /sources/1688/discover` parses 1688 HTML or JSON payloads into reviewable product, supplier-offer, and keyword-seed records without importing them automatically.
 - `GET /opportunities` returns ranked opportunities with score and confidence.
 - `GET /opportunities/{id}` returns product, economics, and score detail.
 - `nz-product-scout google-ads-smoke` calls the real Google Ads API Keyword Planner endpoint for a small connectivity check.
 - `nz-product-scout keywords-refresh` reads keyword seeds and writes Google Ads-backed keyword metrics CSV.
+- `nz-product-scout discover-1688` converts 1688 search/listing HTML or JSON snapshots into pipeline-ready product, supplier-offer, and keyword-seed CSVs.
 
 ## Run Locally
 
@@ -92,6 +94,20 @@ Then refresh Google Ads historical metrics into the standard keyword metrics CSV
 
 After that, rerun the normal rank command. The refresh command uses `New Zealand`, `English`, and REST transport by default.
 
+## Discover 1688 Candidate Products
+
+Use `discover-1688` when you do not already have product CSVs. It can read a saved 1688 HTML page, a JSON payload/export, or a direct URL. Direct URL fetching uses a normal HTTP request only; it does not bypass login, CAPTCHA, or anti-bot controls.
+
+```powershell
+.venv\Scripts\python -m product_scout.cli discover-1688 `
+  --source-json sample_data/1688_discovery_sample.json `
+  --output-products sample_data/products.csv `
+  --output-suppliers sample_data/supplier_offers.csv `
+  --output-keyword-seeds sample_data/keyword_seeds.csv
+```
+
+The discovery layer infers V1 target categories such as thread adapters, spacers, nosepiece adapters, camera adapters, brackets, Bahtinov masks, dust caps, and filter cases. Solar, laser, battery, and powered-electronics terms are preserved as risk flags so the existing risk engine can block them during scoring.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill only the credentials you actually have. Do not commit `.env`.
@@ -111,7 +127,7 @@ GOOGLE_ADS_API_VERSION
 ## Data Notes
 
 - `schema/postgresql.sql` contains the PostgreSQL schema for production persistence.
-- `sample_data/` contains CSV shapes for supplier offers, shipping rates, keyword seeds, HS mapping, and Stats NZ import metrics.
+- `sample_data/` contains CSV shapes for discovered product candidates, supplier offers, shipping rates, keyword seeds, HS mapping, and Stats NZ import metrics.
 - `product_scout.cli` runs the offline Sprint 1-3 pipeline without starting the API.
 - Real Google Ads API credentials are intentionally not hardcoded; use local `.env` values or inject a client matching `KeywordPlannerClient` in `product_scout.google_ads`.
 - `NZ_Astronomy_Product_Scout_Google_Ads_API_Design.rtf` is a short tool-design document for Google Ads API Basic Access review.

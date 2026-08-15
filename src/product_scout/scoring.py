@@ -33,6 +33,12 @@ def build_score_snapshot(
         + Decimal("0.10") * risk
     )
     resolved_status = status or ("QUALIFIED" if prelaunch >= 70 and risk > 0 else "REJECT")
+    resolved_reasons = list(rejection_reasons or [])
+    if not status and resolved_status == "REJECT" and not resolved_reasons:
+        if risk <= 0:
+            resolved_reasons.append("risk_fit_score_zero")
+        elif prelaunch < 70:
+            resolved_reasons.append("prelaunch_score_below_70")
     return ScoreSnapshot(
         product_id=product.id,
         sku=product.sku,
@@ -46,7 +52,7 @@ def build_score_snapshot(
         prelaunch_score=_score(prelaunch),
         confidence=_confidence(confidence_inputs),
         status=resolved_status,
-        rejection_reasons=rejection_reasons or [],
+        rejection_reasons=resolved_reasons,
     )
 
 
@@ -97,4 +103,3 @@ def _decimal(value: Decimal | int | float) -> Decimal:
 
 def _score(value: Decimal) -> Decimal:
     return max(Decimal("0"), min(Decimal("100"), value)).quantize(Decimal("0.01"))
-

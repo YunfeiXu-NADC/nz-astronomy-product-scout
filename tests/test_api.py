@@ -176,3 +176,37 @@ prod_1,m48 t2 adapter,m48_t2_adapter,210,"160|170|180|190|200|210|210|220|225|23
     rows = list(csv.DictReader(output.open(encoding="utf-8")))
     assert rows[0]["status"] == "QUALIFIED"
     assert store.exists()
+
+
+def test_api_discovers_1688_candidates_without_importing_them():
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/sources/1688/discover",
+        json={
+            "source_url": "https://s.1688.com/selloffer/offer_search.htm",
+            "source_json": {
+                "items": [
+                    {
+                        "title": "M48 to T2 telescope adapter",
+                        "price": "12.40",
+                        "moq": 10,
+                        "source_url": "https://detail.1688.com/offer/1.html",
+                        "supplier": "Astronomy CNC",
+                        "weight_g": 32,
+                        "length_mm": 48,
+                        "width_mm": 48,
+                        "height_mm": 12,
+                    }
+                ]
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["discovered_listings"] == 1
+    assert payload["products"][0]["product_type"] == "thread_adapter"
+    assert payload["supplier_offers"][0]["supplier"] == "Astronomy CNC"
+    assert payload["keyword_seeds"][0]["keyword_cluster"] == "thread_adapter"
+    assert client.get("/products").json() == []

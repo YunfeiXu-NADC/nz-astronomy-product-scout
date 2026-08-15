@@ -12,6 +12,7 @@ from .csv_import import (
     import_stats_nz_csv,
     import_supplier_offers_csv,
 )
+from .discovery import build_discovery_result, parse_1688_html, parse_1688_json_payload
 from .models import ImportMetric, KeywordMetric, ProductCandidate
 from .pipeline import recalculate_repository
 from .repository import InMemoryRepository
@@ -42,6 +43,13 @@ class BatchRankRequest(BaseModel):
     output_csv_path: str | None = None
     json_store_path: str | None = None
     sqlite_store_path: str | None = None
+
+
+class Discover1688Request(BaseModel):
+    source_html: str | None = None
+    source_json: Any | None = None
+    source_url: str = "uploaded_1688_source"
+    limit: int = 100
 
 
 def create_app(repository: InMemoryRepository | None = None) -> FastAPI:
@@ -118,6 +126,39 @@ def create_app(repository: InMemoryRepository | None = None) -> FastAPI:
         repo.import_metrics = payload.metrics + csv_metrics
         recalculate_repository(repo)
         return {"imported_metrics": len(repo.import_metrics)}
+
+    @app.post("/sources/1688/discover")
+    def discover_1688_source(payload: Discover1688Request) -> dict[str, Any]:
+        source_count = sum(bool(value) for value in [payload.source_html, payload.source_json])
+        if source_count != 1:
+            raise HTTPException(
+                status_code=422,
+                detail="Provide exactly one source_html or source_json payload",
+            )
+        listings = (
+            parse_1688_html(
+                payload.source_html or "",
+                source_url=payload.source_url,
+                limit=payload.limit,
+            )
+            if payload.source_html
+            else parse_1688_json_payload(
+                payload.source_json,
+                source_url=payload.source_url,
+                limit=payload.limit,
+            )
+        )
+        if not listings:
+            raise HTTPException(status_code=422, detail="No parseable 1688 listings found")
+        result = build_discovery_result(listings)
+        return {
+            "discovered_listings": len(result.listings),
+            "products": [product.model_dump(mode="json") for product in result.products],
+            "supplier_offers": [
+                offer.model_dump(mode="json") for offer in result.supplier_offers
+            ],
+            "keyword_seeds": [seed.model_dump(mode="json") for seed in result.keyword_seeds],
+        }
 
     @app.get("/opportunities")
     def opportunities(

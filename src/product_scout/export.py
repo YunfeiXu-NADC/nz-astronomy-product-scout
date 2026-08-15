@@ -4,7 +4,7 @@ import csv
 from pathlib import Path
 from typing import TextIO
 
-from .models import KeywordMetric, ScoreSnapshot
+from .models import KeywordMetric, KeywordSeed, ProductCandidate, ScoreSnapshot, SupplierOffer
 from .scoring import rank_opportunities
 
 
@@ -35,6 +35,48 @@ KEYWORD_METRIC_COLUMNS = [
     "bid_low",
     "bid_high",
 ]
+
+PRODUCT_COLUMNS = [
+    "id",
+    "canonical_name",
+    "sku",
+    "category",
+    "subcategory",
+    "product_type",
+    "weight_g",
+    "length_mm",
+    "width_mm",
+    "height_mm",
+    "thread_a",
+    "thread_b",
+    "material",
+    "electrical",
+    "battery",
+    "laser",
+    "solar_observation",
+    "safety_risk",
+    "hs_code",
+    "trademe_category_id",
+    "expected_sell_price_nzd",
+]
+
+SUPPLIER_OFFER_COLUMNS = [
+    "source_url",
+    "product_name",
+    "sku",
+    "unit_price_cny",
+    "moq",
+    "weight_g",
+    "length_mm",
+    "width_mm",
+    "height_mm",
+    "domestic_shipping_cny",
+    "supplier",
+    "monthly_sales_ref",
+    "lead_time_days",
+]
+
+KEYWORD_SEED_COLUMNS = ["product_id", "keyword", "keyword_cluster"]
 
 
 def export_opportunities_csv(
@@ -105,3 +147,93 @@ def export_keyword_metrics_csv(
 
 def _blank_if_none(value) -> str:
     return "" if value is None else str(value)
+
+
+def export_products_csv(products: list[ProductCandidate], destination: str | Path | TextIO) -> None:
+    handle, should_close = _open_destination(destination)
+    try:
+        writer = csv.DictWriter(handle, fieldnames=PRODUCT_COLUMNS)
+        writer.writeheader()
+        for product in products:
+            writer.writerow(
+                {
+                    "id": product.id,
+                    "canonical_name": product.canonical_name,
+                    "sku": product.sku,
+                    "category": product.category,
+                    "subcategory": product.subcategory,
+                    "product_type": product.product_type,
+                    "weight_g": product.weight_g,
+                    "length_mm": product.length_mm,
+                    "width_mm": product.width_mm,
+                    "height_mm": product.height_mm,
+                    "thread_a": _blank_if_none(product.thread_a),
+                    "thread_b": _blank_if_none(product.thread_b),
+                    "material": _blank_if_none(product.material),
+                    "electrical": product.electrical,
+                    "battery": product.battery,
+                    "laser": product.laser,
+                    "solar_observation": product.solar_observation,
+                    "safety_risk": _blank_if_none(product.safety_risk),
+                    "hs_code": _blank_if_none(product.hs_code),
+                    "trademe_category_id": _blank_if_none(product.trademe_category_id),
+                    "expected_sell_price_nzd": product.expected_sell_price_nzd,
+                }
+            )
+    finally:
+        if should_close:
+            handle.close()
+
+
+def export_supplier_offers_csv(
+    offers: list[SupplierOffer], destination: str | Path | TextIO
+) -> None:
+    handle, should_close = _open_destination(destination)
+    try:
+        writer = csv.DictWriter(handle, fieldnames=SUPPLIER_OFFER_COLUMNS)
+        writer.writeheader()
+        for offer in offers:
+            writer.writerow(
+                {
+                    "source_url": offer.source_url,
+                    "product_name": offer.product_name,
+                    "sku": offer.sku,
+                    "unit_price_cny": offer.unit_price_cny,
+                    "moq": offer.moq,
+                    "weight_g": offer.weight_g,
+                    "length_mm": offer.package_dimensions.length_mm,
+                    "width_mm": offer.package_dimensions.width_mm,
+                    "height_mm": offer.package_dimensions.height_mm,
+                    "domestic_shipping_cny": offer.domestic_shipping_cny,
+                    "supplier": offer.supplier,
+                    "monthly_sales_ref": _blank_if_none(offer.monthly_sales_ref),
+                    "lead_time_days": offer.lead_time_days,
+                }
+            )
+    finally:
+        if should_close:
+            handle.close()
+
+
+def export_keyword_seeds_csv(seeds: list[KeywordSeed], destination: str | Path | TextIO) -> None:
+    handle, should_close = _open_destination(destination)
+    try:
+        writer = csv.DictWriter(handle, fieldnames=KEYWORD_SEED_COLUMNS)
+        writer.writeheader()
+        for seed in seeds:
+            writer.writerow(
+                {
+                    "product_id": seed.product_id,
+                    "keyword": seed.keyword,
+                    "keyword_cluster": seed.keyword_cluster,
+                }
+            )
+    finally:
+        if should_close:
+            handle.close()
+
+
+def _open_destination(destination: str | Path | TextIO) -> tuple[TextIO, bool]:
+    if hasattr(destination, "write"):
+        return destination, False
+    return Path(destination).open("w", newline="", encoding="utf-8"), True
