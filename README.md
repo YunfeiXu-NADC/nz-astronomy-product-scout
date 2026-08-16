@@ -48,6 +48,7 @@ $env:PYTHONPATH="src"; .venv\Scripts\python -m uvicorn product_scout.api:create_
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
+The bilingual research workspace is served at the same URL. It provides market demand, conclusions, opportunity filters, live Google Ads refresh, and inventory-risk controls without exposing API credentials to the browser.
 
 ## Run A CSV Ranking Batch
 

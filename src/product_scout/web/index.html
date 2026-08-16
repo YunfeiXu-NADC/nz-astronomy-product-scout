@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="NZ Astronomy Product Scout bilingual research workspace">
+  <title>AstroKit NZ · Product Scout</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <strong>AstroKit NZ</strong>
+          <span>Product Scout · 选品研究台</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="data-state" id="data-state">Connecting · 正在连接</span>
+        <div class="segmented" aria-label="Language">
+          <button type="button" class="active" data-lang="zh">中文</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+        <button type="button" class="button button-light" id="refresh-market" title="刷新 Google Ads 数据">
+          <i data-lucide="refresh-cw" aria-hidden="true"></i>
+          <span data-i18n="refresh">刷新市场数据</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="workspace-tabs" aria-label="Workspace views">
+    <div class="tabs-inner">
+      <button type="button" class="tab active" data-tab="overview"><i data-lucide="layout-dashboard"></i><span data-i18n="overview">总览</span></button>
+      <button type="button" class="tab" data-tab="market"><i data-lucide="chart-no-axes-column-increasing"></i><span data-i18n="market">市场需求</span></button>
+      <button type="button" class="tab" data-tab="opportunities"><i data-lucide="list-filter"></i><span data-i18n="opportunities">候选机会</span></button>
+      <button type="button" class="tab" data-tab="inventory"><i data-lucide="package-check"></i><span data-i18n="inventory">库存测试</span></button>
+    </div>
+  </nav>
+
+  <main>
+    <div id="loading" class="loading-state">
+      <div class="loading-line"></div>
+      <span data-i18n="loading">正在加载研究数据…</span>
+    </div>
+
+    <section class="view active" id="view-overview" aria-labelledby="overview-title">
+      <div class="decision-band">
+        <div>
+          <span class="eyebrow">PHASE 0 · 阶段 0</span>
+          <h1 id="overview-title">NZ Astronomy Market / 新西兰天文市场</h1>
+          <div class="decision-copy" id="decision-copy"></div>
+        </div>
+        <div class="decision-status">
+          <span>Decision / 结论</span>
+          <strong>GO</strong>
+          <small>Research only · 仅继续研究</small>
+        </div>
+      </div>
+
+      <div class="kpi-strip" id="kpi-strip" aria-label="Business targets"></div>
+
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">EVIDENCE CHAIN · 证据链</span>
+          <h2 data-i18n="executiveConclusion">总体结论</h2>
+        </div>
+        <span class="source-note" id="overview-updated"></span>
+      </div>
+
+      <div class="report-layout">
+        <article class="report-main">
+          <div class="bilingual-callout" id="positioning-copy"></div>
+          <h3>What the data says / 数据说明了什么</h3>
+          <div class="finding-list" id="finding-list"></div>
+        </article>
+        <aside class="next-panel">
+          <h3>Next evidence / 下一步证据</h3>
+          <ol id="next-list"></ol>
+          <div class="caution-note">
+            <i data-lucide="triangle-alert" aria-hidden="true"></i>
+            <p>Qualified means data-qualified, not purchase-ready.<br><span>“Qualified”仅表示数据初筛通过，不代表可以直接采购。</span></p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="section-heading compact">
+        <div>
+          <span class="eyebrow">SEGMENTS · 细分领域</span>
+          <h2 data-i18n="marketShape">市场结构</h2>
+        </div>
+        <button class="text-button" type="button" data-goto="market"><span data-i18n="viewDetails">查看明细</span><i data-lucide="arrow-right"></i></button>
+      </div>
+      <div class="segment-overview" id="segment-overview"></div>
+    </section>
+
+    <section class="view" id="view-market" aria-labelledby="market-title">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">GOOGLE ADS · NEW ZEALAND · ENGLISH</span>
+          <h1 id="market-title" data-i18n="marketDemand">市场需求分析</h1>
+          <p data-i18n="marketSubtitle">按需求簇去重，避免把同义词搜索量重复相加。</p>
+        </div>
+        <div class="metric-legend">
+          <span><b class="dot core"></b>GO</span>
+          <span><b class="dot watch"></b>WATCH</span>
+          <span><b class="dot hold"></b>HOLD</span>
+        </div>
+      </div>
+
+      <div class="market-bars" id="market-bars"></div>
+
+      <div class="table-toolbar">
+        <label class="search-control">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input id="keyword-search" type="search" placeholder="搜索关键词 / Search keywords">
+        </label>
+        <label>
+          <span class="sr-only">Segment</span>
+          <select id="keyword-segment"></select>
+        </label>
+        <span class="table-count" id="keyword-count"></span>
+      </div>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="keyword">关键词</th>
+              <th data-i18n="segment">领域</th>
+              <th class="numeric" data-i18n="monthlySearches">月搜索量</th>
+              <th data-i18n="trend12m">12个月趋势</th>
+              <th class="numeric" data-i18n="competition">竞争指数</th>
+              <th class="numeric" data-i18n="bidRange">Bid 区间</th>
+            </tr>
+          </thead>
+          <tbody id="keyword-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-opportunities" aria-labelledby="opportunity-title">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">PRE-LAUNCH RANKING · 上架前排序</span>
+          <h1 id="opportunity-title" data-i18n="candidateOpportunities">候选商品机会</h1>
+          <p id="opportunity-source"></p>
+        </div>
+        <div class="inline-warning"><i data-lucide="badge-info"></i><span data-i18n="provisional">当前数据为初步结果，重量、兼容性与样品仍需验证。</span></div>
+      </div>
+
+      <div class="table-toolbar">
+        <label class="search-control">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input id="opportunity-search" type="search" placeholder="搜索 SKU / 商品">
+        </label>
+        <select id="status-filter">
+          <option value="">全部状态 / All status</option>
+          <option value="QUALIFIED">QUALIFIED</option>
+          <option value="REJECT">REJECT</option>
+          <option value="BLOCKED">BLOCKED</option>
+        </select>
+        <label class="range-control">
+          <span data-i18n="minConfidence">最低置信度</span>
+          <input id="confidence-filter" type="range" min="0" max="100" step="5" value="0">
+          <output id="confidence-output">0</output>
+        </label>
+        <span class="table-count" id="opportunity-count"></span>
+      </div>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-i18n="product">商品 / SKU</th>
+              <th class="numeric" data-i18n="score">综合得分</th>
+              <th class="numeric" data-i18n="confidence">置信度</th>
+              <th class="numeric" data-i18n="contribution">单单贡献</th>
+              <th class="numeric" data-i18n="margin">贡献率</th>
+              <th data-i18n="status">状态</th>
+            </tr>
+          </thead>
+          <tbody id="opportunity-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-inventory" aria-labelledby="inventory-title">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">PILOT CONTROL · 首批测试控制</span>
+          <h1 id="inventory-title" data-i18n="inventoryRisk">库存风险计算</h1>
+          <p data-i18n="inventorySubtitle">按落地成本和计划数量检查首批库存，不使用零售价估算风险。</p>
+        </div>
+      </div>
+
+      <div class="inventory-layout">
+        <div class="inventory-form-panel">
+          <div class="inventory-header-row">
+            <h2 data-i18n="plannedCommitments">计划采购</h2>
+            <button class="button button-secondary" type="button" id="add-inventory-row"><i data-lucide="plus"></i><span data-i18n="addSku">添加 SKU</span></button>
+          </div>
+          <div class="inventory-grid inventory-labels" aria-hidden="true">
+            <span>SKU</span><span data-i18n="landedUnitCost">单件落地成本</span><span data-i18n="units">数量</span><span></span>
+          </div>
+          <div id="inventory-rows"></div>
+          <button class="button button-primary" type="button" id="calculate-risk"><i data-lucide="calculator"></i><span data-i18n="calculateRisk">计算库存风险</span></button>
+        </div>
+        <aside class="risk-result" id="risk-result" aria-live="polite">
+          <span class="eyebrow">RISK BUDGET · 风险预算</span>
+          <strong>NZ$1,500</strong>
+          <p>Provisional landed-cost cap<br>首批落地成本暂定上限</p>
+          <div class="risk-meter"><span style="width:0%"></span></div>
+          <div class="risk-breakdown" id="risk-breakdown"></div>
+        </aside>
+      </div>
+
+      <div class="test-window-band">
+        <div><strong>30–60</strong><span>days per SKU<br>每个 SKU 测试周期</span></div>
+        <p>Time alone is not evidence. A SKU without enough qualified traffic remains inconclusive.<br><span>只有时间经过不代表完成验证；流量不足时应标记为“证据不足”，而不是直接淘汰。</span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>AstroKit NZ Product Scout V1</span>
+    <span id="footer-source">Evidence-led · 可审计证据链</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

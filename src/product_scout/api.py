@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .batch import RankBatchPaths, run_rank_batch
 from .csv_import import (
@@ -13,6 +16,8 @@ from .csv_import import (
     import_supplier_offers_csv,
 )
 from .discovery import build_discovery_result, parse_1688_html, parse_1688_json_payload
+from .dashboard import DashboardDataService
+from .google_ads import GoogleAdsRestKeywordPlannerClient, load_google_ads_config
 from .models import ImportMetric, KeywordMetric, ProductCandidate
 from .pipeline import recalculate_repository
 from .repository import InMemoryRepository
@@ -61,9 +66,45 @@ class InventoryRiskRequest(BaseModel):
     commitments: list[InventoryCommitment]
 
 
-def create_app(repository: InMemoryRepository | None = None) -> FastAPI:
+def create_app(
+    repository: InMemoryRepository | None = None,
+    data_root: str | Path | None = None,
+) -> FastAPI:
     repo = repository or InMemoryRepository()
+    root = Path(data_root) if data_root is not None else Path.cwd()
+    dashboard = DashboardDataService(root, repo)
     app = FastAPI(title="NZ Astronomy Product Scout V1")
+    web_root = Path(__file__).with_name("web")
+    app.mount("/static", StaticFiles(directory=web_root), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def dashboard_page() -> FileResponse:
+        return FileResponse(web_root / "index.html")
+
+    @app.get("/dashboard/overview")
+    def dashboard_overview() -> dict[str, Any]:
+        return dashboard.overview()
+
+    @app.get("/dashboard/market")
+    def dashboard_market() -> dict[str, Any]:
+        return dashboard.market()
+
+    @app.get("/dashboard/opportunities")
+    def dashboard_opportunities() -> dict[str, Any]:
+        return dashboard.opportunities()
+
+    @app.post("/dashboard/market/refresh")
+    def dashboard_market_refresh() -> dict[str, Any]:
+        try:
+            config = load_google_ads_config(root / ".env")
+            client = GoogleAdsRestKeywordPlannerClient(config)
+            return dashboard.refresh_market(
+                client,
+                location=config.geo_target,
+                language=config.language,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.get("/business/targets")
     def business_targets() -> dict[str, Any]:
