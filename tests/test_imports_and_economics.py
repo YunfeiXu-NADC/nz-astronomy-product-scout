@@ -91,7 +91,7 @@ https://1688.example/m48,M48 to T2 Adapter,M48-T2,12.40,10,32,120,120,120,4.50,A
     assert result.contribution_profit_nzd == Decimal("10.99")
     assert result.contribution_margin == Decimal("0.3676")
     assert result.status == "REJECT"
-    assert result.rejection_reasons == ["contribution_profit_below_15_nzd"]
+    assert result.rejection_reasons == ["contribution_profit_below_20_nzd"]
 
 
 def test_hs_mapping_marks_low_confidence_for_manual_confirmation():

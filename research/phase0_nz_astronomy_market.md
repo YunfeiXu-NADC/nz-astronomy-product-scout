@@ -89,8 +89,34 @@ A demand opportunity cluster can proceed to 1688 sourcing only when all applicab
 2. **Specialist add-on cluster:** at least one exact commercial keyword has 10 or more average monthly searches and the product attaches to a qualified primary cluster or bundle.
 3. **Demand quality:** informational, commercial, compatibility, and seasonal intent are separated; close synonyms are not summed.
 4. **Risk:** no safety-critical solar, laser, battery, or powered-electronics product enters V1.
-5. **Economics:** estimated contribution margin is at least 30% and contribution profit is at least NZD 15 per order.
+5. **Economics:** estimated contribution margin is at least 30% and contribution profit is at least NZD 20 per order.
 6. **Evidence confidence:** no product is marked `QUALIFIED` solely from Google Ads or solely from 1688 supply data.
+
+## Business Outcome Targets
+
+- Monthly contribution profit target: NZD 3,000.
+- Minimum contribution profit per order: NZD 20.
+- Required run rate at the minimum: 150 orders per month, or about 5 orders per day.
+- Minimum contribution margin: 30%. This is deliberately stricter than purchase gross margin because it is measured after landed cost, marketplace and payment fees, packaging, and refund reserve.
+- Provisional maximum initial inventory at risk: NZD 1,500 of landed cost. This is configurable and should not be treated as a spending target.
+- SKU validation window: 30-60 days. A time window without sufficient qualified traffic is inconclusive, not an automatic product rejection.
+
+### Run-rate implications
+
+| Actual contribution profit per order | Orders required per month | Approximate orders per day |
+| ---: | ---: | ---: |
+| NZD 20 | 150 | 5.0 |
+| NZD 25 | 120 | 4.0 |
+| NZD 30 | 100 | 3.3 |
+
+The functional-accessory demand index is only 170, and searches are not orders. A store based only on low-volume adapters and passive accessories is therefore structurally unlikely to reach 150 monthly orders. The product strategy must do at least one of the following:
+
+- raise contribution profit per order with use-case bundles;
+- acquire customers from larger beginner, stargazing, or astrophotography demand clusters;
+- add carefully selected higher-demand education or gift products without losing the astronomy position;
+- build repeat purchase and cross-sell only after real customer evidence exists.
+
+This is a portfolio-level constraint. A SKU can pass its own economics gate and still fail to contribute meaningfully to the monthly business target.
 
 ## Next Research Work
 

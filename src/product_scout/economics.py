@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from pydantic import BaseModel
 
 from .models import EconomicsResult, ProductCandidate, ShippingQuote, ShippingRate, SupplierOffer
+from .targets import DEFAULT_BUSINESS_TARGETS
 
 
 MONEY = Decimal("0.01")
@@ -18,8 +19,10 @@ class EconomicsAssumptions(BaseModel):
     payment_fixed_nzd: Decimal = Decimal("0.10")
     packaging_nzd: Decimal = Decimal("0.50")
     refund_reserve_rate: Decimal = Decimal("0.030")
-    min_contribution_margin: Decimal = Decimal("0.30")
-    min_contribution_profit_nzd: Decimal = Decimal("15.00")
+    min_contribution_margin: Decimal = DEFAULT_BUSINESS_TARGETS.min_contribution_margin
+    min_contribution_profit_nzd: Decimal = (
+        DEFAULT_BUSINESS_TARGETS.min_contribution_profit_per_order_nzd
+    )
 
 
 class ChinaDirectCostEngine:
@@ -70,7 +73,7 @@ class ChinaDirectCostEngine:
         if contribution_margin < self.assumptions.min_contribution_margin:
             rejection_reasons.append("contribution_margin_below_30_percent")
         if contribution_profit < self.assumptions.min_contribution_profit_nzd:
-            rejection_reasons.append("contribution_profit_below_15_nzd")
+            rejection_reasons.append("contribution_profit_below_20_nzd")
 
         return EconomicsResult(
             product_id=product.id,
@@ -136,10 +139,12 @@ class ChinaDirectCostEngine:
 
 def unit_economics_score(result: EconomicsResult) -> Decimal:
     if result.status != "QUALIFIED":
-        profit_component = max(Decimal("0"), result.contribution_profit_nzd / Decimal("15") * 50)
+        profit_component = max(
+            Decimal("0"), result.contribution_profit_nzd / Decimal("20") * 50
+        )
         margin_component = max(Decimal("0"), result.contribution_margin / Decimal("0.30") * 50)
         return min(Decimal("69"), _score(profit_component + margin_component))
-    profit_score = min(Decimal("50"), result.contribution_profit_nzd / Decimal("30") * 50)
+    profit_score = min(Decimal("50"), result.contribution_profit_nzd / Decimal("40") * 50)
     margin_score = min(Decimal("50"), result.contribution_margin / Decimal("0.50") * 50)
     return _score(profit_score + margin_score)
 
@@ -174,4 +179,3 @@ def _ratio(value: Decimal) -> Decimal:
 
 def _score(value: Decimal) -> Decimal:
     return max(Decimal("0"), min(Decimal("100"), value)).quantize(Decimal("0.01"))
-

@@ -17,6 +17,11 @@ from .models import ImportMetric, KeywordMetric, ProductCandidate
 from .pipeline import recalculate_repository
 from .repository import InMemoryRepository
 from .scoring import rank_opportunities
+from .targets import (
+    DEFAULT_BUSINESS_TARGETS,
+    InventoryCommitment,
+    assess_initial_inventory_risk,
+)
 
 
 class ProductImportRequest(BaseModel):
@@ -52,9 +57,21 @@ class Discover1688Request(BaseModel):
     limit: int = 100
 
 
+class InventoryRiskRequest(BaseModel):
+    commitments: list[InventoryCommitment]
+
+
 def create_app(repository: InMemoryRepository | None = None) -> FastAPI:
     repo = repository or InMemoryRepository()
     app = FastAPI(title="NZ Astronomy Product Scout V1")
+
+    @app.get("/business/targets")
+    def business_targets() -> dict[str, Any]:
+        return DEFAULT_BUSINESS_TARGETS.summary()
+
+    @app.post("/business/inventory-risk")
+    def inventory_risk(payload: InventoryRiskRequest) -> dict[str, Any]:
+        return assess_initial_inventory_risk(payload.commitments)
 
     @app.post("/products/import")
     def import_products(payload: ProductImportRequest) -> dict[str, int]:

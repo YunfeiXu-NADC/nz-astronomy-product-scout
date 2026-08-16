@@ -6,6 +6,51 @@ from fastapi.testclient import TestClient
 from product_scout.api import create_app
 
 
+def test_business_targets_expose_order_and_inventory_constraints():
+    client = TestClient(create_app())
+
+    response = client.get("/business/targets")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "monthly_contribution_profit_nzd": "3000.00",
+        "min_contribution_profit_per_order_nzd": "20.00",
+        "min_contribution_margin": "0.30",
+        "max_initial_inventory_risk_nzd": "1500.00",
+        "min_sku_test_days": 30,
+        "max_sku_test_days": 60,
+        "required_monthly_orders": 150,
+        "required_daily_orders": "5.0",
+    }
+
+
+def test_inventory_risk_endpoint_enforces_the_initial_cap():
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/business/inventory-risk",
+        json={
+            "commitments": [
+                {
+                    "sku": "FILTER-CASE",
+                    "landed_unit_cost_nzd": "15.00",
+                    "units": 50,
+                },
+                {
+                    "sku": "DUST-CAP",
+                    "landed_unit_cost_nzd": "10.00",
+                    "units": 50,
+                },
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["planned_inventory_risk_nzd"] == "1250.00"
+    assert response.json()["remaining_headroom_nzd"] == "250.00"
+    assert response.json()["status"] == "QUALIFIED"
+
+
 def test_api_imports_products_and_returns_economics_and_opportunities():
     client = TestClient(create_app())
     payload = {

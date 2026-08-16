@@ -24,6 +24,8 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `POST /products/import` imports product candidates plus supplier and shipping CSV text.
 - `POST /products`, `GET /products`, `GET /products/{id}`, `PATCH /products/{id}` manage candidates.
 - `GET /products/{id}/economics` returns landed cost, fees, margin, profit, break-even price, and pass/reject reasons.
+- `GET /business/targets` returns the monthly profit goal, per-order economics gates, provisional inventory-risk cap, test window, and required order run rate.
+- `POST /business/inventory-risk` checks planned SKU quantities and landed unit costs against the initial inventory-risk cap.
 - `POST /keywords/refresh` accepts refreshed Keyword Planner metrics.
 - `POST /imports/refresh` accepts Stats NZ metrics as JSON or CSV text.
 - `POST /batches/rank` reads local CSV paths, writes a ranked opportunity CSV, and can persist a local SQLite state file.
