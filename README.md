@@ -28,6 +28,8 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `POST /business/inventory-risk` checks planned SKU quantities and landed unit costs against the initial inventory-risk cap.
 - `POST /keywords/refresh` accepts refreshed Keyword Planner metrics.
 - `POST /imports/refresh` accepts Stats NZ metrics as JSON or CSV text.
+- `GET /dashboard/trademe` returns manual Trade Me market snapshots and derived evidence metrics.
+- `POST /dashboard/trademe/snapshots` records a dated, source-linked active-listing sample; `DELETE /dashboard/trademe/snapshots/{id}` removes an incorrect observation.
 - `POST /batches/rank` reads local CSV paths, writes a ranked opportunity CSV, and can persist a local SQLite state file.
 - `POST /sources/1688/discover` parses 1688 HTML or JSON payloads into reviewable product, supplier-offer, and keyword-seed records without importing them automatically.
 - `GET /opportunities` returns ranked opportunities with score and confidence.
@@ -48,7 +50,9 @@ $env:PYTHONPATH="src"; .venv\Scripts\python -m uvicorn product_scout.api:create_
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
-The bilingual research workspace is served at the same URL. It provides market demand, conclusions, opportunity filters, live Google Ads refresh, and inventory-risk controls without exposing API credentials to the browser.
+The bilingual research workspace is served at the same URL. It provides market demand, Trade Me manual market validation, conclusions, opportunity filters, live Google Ads refresh, and inventory-risk controls without exposing API credentials to the browser.
+
+Trade Me observations are stored locally in `.local/market-validation/trademe_snapshots.json`. The workspace validates sample counts, records the source URL and observation date, and reports supply, price, bid-activity, and evidence-completeness metrics. It does not scrape Trade Me or treat a removed listing as a sale.
 
 ## Run A CSV Ranking Batch
 

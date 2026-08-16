@@ -43,6 +43,7 @@ def test_dashboard_serves_bilingual_workspace_and_market_data(tmp_path):
 
     assert page.status_code == 200
     assert "Product Scout · 选品研究台" in page.text
+    assert 'id="trademe-form"' in page.text
     assert market.status_code == 200
     assert market.json()["summaries"][0]["label_zh"] == "核心天文市场"
     assert market.json()["metrics"][0]["monthly_searches"] == "2900"
@@ -70,5 +71,7 @@ def test_dashboard_static_assets_are_packaged(tmp_path):
 
     assert script.status_code == 200
     assert "calculateInventoryRisk" in script.text
+    assert "saveTradeMeSnapshot" in script.text
     assert stylesheet.status_code == 200
     assert ".inventory-layout" in stylesheet.text
+    assert ".validation-layout" in stylesheet.text

@@ -2,6 +2,7 @@ const state = {
   language: localStorage.getItem("product-scout-language") || "zh",
   overview: null,
   market: { summaries: [], metrics: [] },
+  trademe: { snapshots: [], summary: {}, policy: {} },
   opportunities: { items: [], source: "none" },
   targets: null,
 };
@@ -11,6 +12,7 @@ const translations = {
     refresh: "刷新市场数据",
     overview: "总览",
     market: "市场需求",
+    trademe: "Trade Me 验证",
     opportunities: "候选机会",
     inventory: "库存测试",
     loading: "正在加载研究数据…",
@@ -25,6 +27,14 @@ const translations = {
     trend12m: "12个月趋势",
     competition: "竞争指数",
     bidRange: "Bid 区间",
+    trademeValidation: "Trade Me 市场验证",
+    trademeSubtitle: "记录人工观察的活跃商品样本；不抓取，也不把下架直接视为成交。",
+    manualEvidence: "仅限人工证据",
+    recordObservation: "记录市场观察",
+    reset: "重置",
+    saveSnapshot: "保存快照",
+    marketplaceRead: "平台证据结论",
+    snapshotHistory: "快照历史",
     candidateOpportunities: "候选商品机会",
     provisional: "当前数据为初步结果，重量、兼容性与样品仍需验证。",
     minConfidence: "最低置信度",
@@ -46,6 +56,7 @@ const translations = {
     refresh: "Refresh market data",
     overview: "Overview",
     market: "Market demand",
+    trademe: "Trade Me validation",
     opportunities: "Opportunities",
     inventory: "Inventory test",
     loading: "Loading research data…",
@@ -60,6 +71,14 @@ const translations = {
     trend12m: "12-month trend",
     competition: "Competition",
     bidRange: "Bid range",
+    trademeValidation: "Trade Me market validation",
+    trademeSubtitle: "Record manually observed active listings; no scraping and no assumption that removed listings were sold.",
+    manualEvidence: "Manual evidence only",
+    recordObservation: "Record market observation",
+    reset: "Reset",
+    saveSnapshot: "Save snapshot",
+    marketplaceRead: "Marketplace evidence read",
+    snapshotHistory: "Snapshot history",
     candidateOpportunities: "Candidate opportunities",
     provisional: "Results are provisional; weight, compatibility, and samples still require verification.",
     minConfidence: "Min confidence",
@@ -84,6 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindLanguage();
   bindFilters();
   bindInventory();
+  bindTradeMe();
   applyLanguage();
   loadDashboard();
 });
@@ -91,14 +111,16 @@ document.addEventListener("DOMContentLoaded", () => {
 async function loadDashboard() {
   setLoading(true);
   try {
-    const [overview, market, opportunities, targets] = await Promise.all([
+    const [overview, market, trademe, opportunities, targets] = await Promise.all([
       fetchJson("/dashboard/overview"),
       fetchJson("/dashboard/market"),
+      fetchJson("/dashboard/trademe"),
       fetchJson("/dashboard/opportunities"),
       fetchJson("/business/targets"),
     ]);
     state.overview = overview;
     state.market = market;
+    state.trademe = trademe;
     state.opportunities = opportunities;
     state.targets = targets;
     renderAll();
@@ -127,6 +149,7 @@ function renderAll() {
   renderMarketBars();
   populateSegmentFilter();
   renderKeywordTable();
+  renderTradeMe();
   renderOpportunityTable();
   renderInventoryDefaults();
   refreshIcons();
@@ -259,6 +282,137 @@ function renderOpportunityTable() {
       </tr>`;
     }).join("")
     : emptyRow(7);
+}
+
+function bindTradeMe() {
+  const form = document.querySelector("#trademe-form");
+  form.addEventListener("submit", saveTradeMeSnapshot);
+  form.addEventListener("reset", () => setTimeout(setTradeMeDateDefault, 0));
+  document.querySelector("#trademe-search").addEventListener("input", renderTradeMeTable);
+  document.querySelector("#trademe-cluster-filter").addEventListener("input", renderTradeMeTable);
+  setTradeMeDateDefault();
+}
+
+async function saveTradeMeSnapshot(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = document.querySelector("#save-trademe-snapshot");
+  const payload = Object.fromEntries(new FormData(form).entries());
+  [
+    "active_listing_count",
+    "sampled_listing_count",
+    "unique_seller_count",
+    "buy_now_listing_count",
+    "bid_listing_count",
+    "total_bid_count",
+    "in_trade_seller_count",
+    "free_shipping_listing_count",
+  ].forEach((field) => { payload[field] = Number(payload[field]); });
+  ["min_price_nzd", "median_price_nzd", "max_price_nzd"].forEach((field) => {
+    payload[field] = payload[field] === "" ? null : payload[field];
+  });
+  button.disabled = true;
+  try {
+    await fetchJson("/dashboard/trademe/snapshots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    state.trademe = await fetchJson("/dashboard/trademe");
+    renderTradeMe();
+    form.reset();
+    setTradeMeDateDefault();
+    showToast(state.language === "zh" ? "Trade Me 快照已保存" : "Trade Me snapshot saved");
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    button.disabled = false;
+    refreshIcons();
+  }
+}
+
+function renderTradeMe() {
+  const summary = state.trademe.summary || {};
+  const summaryItems = [
+    [state.language === "zh" ? "快照数" : "Snapshots", number(summary.snapshot_count)],
+    [state.language === "zh" ? "已覆盖机会簇" : "Clusters covered", number(summary.cluster_count)],
+    [state.language === "zh" ? "每簇活跃商品中位数" : "Median active / cluster", number(summary.median_active_listings_per_cluster)],
+    [state.language === "zh" ? "平均竞价商品占比" : "Average bid-active share", percent(summary.average_bid_listing_share)],
+  ];
+  document.querySelector("#trademe-summary").innerHTML = summaryItems
+    .map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${value}</strong></div>`)
+    .join("");
+  document.querySelector("#trademe-conclusion").innerHTML = bilingual(summary.conclusion || { zh: "—", en: "—" });
+  const policy = state.trademe.policy || {};
+  document.querySelector("#trademe-policy").innerHTML = `${escapeHtml(policy.zh || "")}<span>${escapeHtml(policy.en || "")}</span>`;
+  renderTradeMeTable();
+}
+
+function renderTradeMeTable() {
+  const query = document.querySelector("#trademe-search").value.trim().toLowerCase();
+  const cluster = document.querySelector("#trademe-cluster-filter").value;
+  const rows = (state.trademe.snapshots || [])
+    .filter((item) => !cluster || item.query_cluster === cluster)
+    .filter((item) => !query || `${item.search_query} ${item.query_cluster} ${item.notes}`.toLowerCase().includes(query));
+  document.querySelector("#trademe-count").textContent = `${rows.length} ${state.language === "zh" ? "条快照" : "snapshots"}`;
+  document.querySelector("#trademe-table").innerHTML = rows.length
+    ? rows.map((item) => `<tr>
+        <td>${escapeHtml(item.observed_at)}</td>
+        <td><span class="product-primary">${escapeHtml(item.search_query)}</span><span class="product-secondary">${escapeHtml(tradeMeClusterLabel(item.query_cluster))}</span></td>
+        <td class="numeric">${number(item.active_listing_count)}</td>
+        <td class="numeric">${number(item.sampled_listing_count)}</td>
+        <td class="numeric">${number(item.unique_seller_count)}</td>
+        <td class="numeric">${item.median_price_nzd == null ? "—" : money(item.median_price_nzd)}</td>
+        <td class="numeric">${percent(item.bid_listing_share)}</td>
+        <td><span class="status-chip ${statusClassName(item.confidence_label)}">${escapeHtml(item.confidence_label)} · ${number(item.confidence)}</span></td>
+        <td class="snapshot-actions">
+          <a class="icon-button" href="${escapeAttr(item.source_url)}" target="_blank" rel="noreferrer" title="Open Trade Me source / 打开来源"><i data-lucide="external-link"></i></a>
+          <button class="icon-button delete-snapshot" type="button" data-snapshot-id="${escapeAttr(item.id)}" title="Delete snapshot / 删除快照"><i data-lucide="trash-2"></i></button>
+        </td>
+      </tr>`).join("")
+    : emptyRow(9);
+  document.querySelectorAll(".delete-snapshot").forEach((button) => {
+    button.addEventListener("click", () => deleteTradeMeSnapshot(button.dataset.snapshotId));
+  });
+  refreshIcons();
+}
+
+async function deleteTradeMeSnapshot(snapshotId) {
+  const message = state.language === "zh" ? "删除这条 Trade Me 快照？" : "Delete this Trade Me snapshot?";
+  if (!window.confirm(message)) return;
+  try {
+    await fetchJson(`/dashboard/trademe/snapshots/${encodeURIComponent(snapshotId)}`, { method: "DELETE" });
+    state.trademe = await fetchJson("/dashboard/trademe");
+    renderTradeMe();
+    showToast(state.language === "zh" ? "快照已删除" : "Snapshot deleted");
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function setTradeMeDateDefault() {
+  const field = document.querySelector("#trademe-observed-at");
+  const today = localIsoDate(new Date());
+  field.max = today;
+  if (!field.value) field.value = today;
+}
+
+function tradeMeClusterLabel(value) {
+  const labels = {
+    beginner_telescope: "Beginner telescope / 入门望远镜",
+    astrophotography: "Astrophotography / 天文摄影",
+    compatibility_accessories: "Compatibility accessories / 兼容配件",
+    astronomy_gifts: "Astronomy gifts / 天文礼品",
+    education_stem: "Education & STEM / 教育",
+    matariki: "Matariki",
+    other: "Other / 其他",
+  };
+  return labels[value] || value;
+}
+
+function localIsoDate(value) {
+  const offset = value.getTimezoneOffset() * 60000;
+  return new Date(value.getTime() - offset).toISOString().slice(0, 10);
 }
 
 function bindNavigation() {

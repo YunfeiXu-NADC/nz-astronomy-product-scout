@@ -39,6 +39,7 @@
     <div class="tabs-inner">
       <button type="button" class="tab active" data-tab="overview"><i data-lucide="layout-dashboard"></i><span data-i18n="overview">总览</span></button>
       <button type="button" class="tab" data-tab="market"><i data-lucide="chart-no-axes-column-increasing"></i><span data-i18n="market">市场需求</span></button>
+      <button type="button" class="tab" data-tab="trademe"><i data-lucide="store"></i><span data-i18n="trademe">Trade Me 验证</span></button>
       <button type="button" class="tab" data-tab="opportunities"><i data-lucide="list-filter"></i><span data-i18n="opportunities">候选机会</span></button>
       <button type="button" class="tab" data-tab="inventory"><i data-lucide="package-check"></i><span data-i18n="inventory">库存测试</span></button>
     </div>
@@ -186,6 +187,138 @@
             </tr>
           </thead>
           <tbody id="opportunity-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-trademe" aria-labelledby="trademe-title">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">MARKETPLACE EVIDENCE · 平台证据</span>
+          <h1 id="trademe-title" data-i18n="trademeValidation">Trade Me 市场验证</h1>
+          <p data-i18n="trademeSubtitle">记录人工观察的活跃商品样本；不抓取，也不把下架直接视为成交。</p>
+        </div>
+        <div class="inline-warning"><i data-lucide="shield-check"></i><span data-i18n="manualEvidence">Manual evidence only · 仅限人工证据</span></div>
+      </div>
+
+      <div class="snapshot-summary" id="trademe-summary"></div>
+
+      <div class="validation-layout">
+        <form class="snapshot-form-panel" id="trademe-form">
+          <div class="inventory-header-row">
+            <div>
+              <span class="eyebrow">NEW SNAPSHOT · 新快照</span>
+              <h2 data-i18n="recordObservation">记录市场观察</h2>
+            </div>
+            <button class="button button-secondary" type="reset"><i data-lucide="rotate-ccw"></i><span data-i18n="reset">重置</span></button>
+          </div>
+
+          <div class="form-section">
+            <h3>Search context / 搜索上下文</h3>
+            <div class="snapshot-context-grid">
+              <label class="form-field">
+                <span>Opportunity cluster / 机会簇</span>
+                <select name="query_cluster" required>
+                  <option value="beginner_telescope">Beginner telescope / 入门望远镜</option>
+                  <option value="astrophotography">Astrophotography / 天文摄影</option>
+                  <option value="compatibility_accessories">Compatibility accessories / 兼容配件</option>
+                  <option value="astronomy_gifts">Astronomy gifts / 天文礼品</option>
+                  <option value="education_stem">Education &amp; STEM / 教育</option>
+                  <option value="matariki">Matariki</option>
+                  <option value="other">Other / 其他</option>
+                </select>
+              </label>
+              <label class="form-field">
+                <span>Search query / 搜索词</span>
+                <input name="search_query" type="text" maxlength="160" placeholder="beginner telescope" required>
+              </label>
+              <label class="form-field">
+                <span>Observed date / 观察日期</span>
+                <input name="observed_at" id="trademe-observed-at" type="date" required>
+              </label>
+            </div>
+            <label class="form-field">
+              <span>Trade Me search URL / 搜索链接</span>
+              <input name="source_url" type="url" placeholder="https://www.trademe.co.nz/a/marketplace/search?..." required>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h3>Sample measurements / 样本指标</h3>
+            <div class="snapshot-metric-grid">
+              <label class="form-field"><span>Active listings / 活跃商品</span><input name="active_listing_count" type="number" min="0" step="1" required></label>
+              <label class="form-field"><span>Sampled / 抽样商品</span><input name="sampled_listing_count" type="number" min="0" step="1" required></label>
+              <label class="form-field"><span>Unique sellers / 独立卖家</span><input name="unique_seller_count" type="number" min="0" step="1" required></label>
+              <label class="form-field"><span>In-trade sellers / 企业卖家</span><input name="in_trade_seller_count" type="number" min="0" step="1" value="0" required></label>
+              <label class="form-field"><span>Minimum price / 最低价</span><input name="min_price_nzd" type="number" min="0" step="0.01"></label>
+              <label class="form-field"><span>Median price / 中位价</span><input name="median_price_nzd" type="number" min="0" step="0.01"></label>
+              <label class="form-field"><span>Maximum price / 最高价</span><input name="max_price_nzd" type="number" min="0" step="0.01"></label>
+              <label class="form-field"><span>Buy Now listings / 一口价</span><input name="buy_now_listing_count" type="number" min="0" step="1" value="0" required></label>
+              <label class="form-field"><span>Listings with bids / 有竞价</span><input name="bid_listing_count" type="number" min="0" step="1" value="0" required></label>
+              <label class="form-field"><span>Total bids / 总出价数</span><input name="total_bid_count" type="number" min="0" step="1" value="0" required></label>
+              <label class="form-field"><span>Free shipping / 包邮商品</span><input name="free_shipping_listing_count" type="number" min="0" step="1" value="0" required></label>
+            </div>
+            <label class="form-field">
+              <span>Notes / 备注</span>
+              <textarea name="notes" maxlength="2000" rows="3" placeholder="第一页人工样本、主要品牌、异常价格或兼容性问题"></textarea>
+            </label>
+          </div>
+
+          <button class="button button-primary" type="submit" id="save-trademe-snapshot"><i data-lucide="save"></i><span data-i18n="saveSnapshot">保存快照</span></button>
+        </form>
+
+        <aside class="evidence-panel">
+          <span class="eyebrow">CURRENT READ · 当前判断</span>
+          <h2 data-i18n="marketplaceRead">平台证据结论</h2>
+          <div class="bilingual-callout" id="trademe-conclusion"></div>
+          <div class="evidence-rules">
+            <div><strong>Active listings</strong><span>供给规模，不是销量</span></div>
+            <div><strong>Bid activity</strong><span>交易兴趣代理指标</span></div>
+            <div><strong>Confidence</strong><span>样本完整度，不是成功率</span></div>
+          </div>
+          <p class="policy-note" id="trademe-policy"></p>
+        </aside>
+      </div>
+
+      <div class="section-heading compact">
+        <div>
+          <span class="eyebrow">AUDIT LOG · 证据记录</span>
+          <h2 data-i18n="snapshotHistory">快照历史</h2>
+        </div>
+      </div>
+      <div class="table-toolbar">
+        <label class="search-control">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input id="trademe-search" type="search" placeholder="搜索查询词 / Search snapshots">
+        </label>
+        <select id="trademe-cluster-filter">
+          <option value="">全部机会簇 / All clusters</option>
+          <option value="beginner_telescope">Beginner telescope</option>
+          <option value="astrophotography">Astrophotography</option>
+          <option value="compatibility_accessories">Compatibility accessories</option>
+          <option value="astronomy_gifts">Astronomy gifts</option>
+          <option value="education_stem">Education &amp; STEM</option>
+          <option value="matariki">Matariki</option>
+          <option value="other">Other</option>
+        </select>
+        <span class="table-count" id="trademe-count"></span>
+      </div>
+      <div class="table-shell">
+        <table class="trademe-table">
+          <thead>
+            <tr>
+              <th>Date / 日期</th>
+              <th>Query / 查询</th>
+              <th class="numeric">Active / 活跃</th>
+              <th class="numeric">Sample / 样本</th>
+              <th class="numeric">Sellers / 卖家</th>
+              <th class="numeric">Median / 中位价</th>
+              <th class="numeric">Bid activity / 竞价率</th>
+              <th>Confidence / 置信度</th>
+              <th><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="trademe-table"></tbody>
         </table>
       </div>
     </section>

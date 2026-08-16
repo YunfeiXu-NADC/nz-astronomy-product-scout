@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from .batch import RankBatchPaths, run_rank_batch
 from .csv_import import (
@@ -26,6 +26,12 @@ from .targets import (
     DEFAULT_BUSINESS_TARGETS,
     InventoryCommitment,
     assess_initial_inventory_risk,
+)
+from .trademe import (
+    TradeMeSnapshotCreate,
+    TradeMeSnapshotStore,
+    snapshot_metrics,
+    summarize_snapshots,
 )
 
 
@@ -73,6 +79,9 @@ def create_app(
     repo = repository or InMemoryRepository()
     root = Path(data_root) if data_root is not None else Path.cwd()
     dashboard = DashboardDataService(root, repo)
+    trademe_store = TradeMeSnapshotStore(
+        root / ".local" / "market-validation" / "trademe_snapshots.json"
+    )
     app = FastAPI(title="NZ Astronomy Product Scout V1")
     web_root = Path(__file__).with_name("web")
     app.mount("/static", StaticFiles(directory=web_root), name="static")
@@ -92,6 +101,29 @@ def create_app(
     @app.get("/dashboard/opportunities")
     def dashboard_opportunities() -> dict[str, Any]:
         return dashboard.opportunities()
+
+    @app.get("/dashboard/trademe")
+    def dashboard_trademe() -> dict[str, Any]:
+        snapshots = trademe_store.list()
+        return {
+            "snapshots": [snapshot_metrics(item) for item in snapshots],
+            "summary": summarize_snapshots(snapshots),
+            "source": str(trademe_store.path),
+            "policy": {
+                "zh": "仅记录人工观察的活跃商品样本；不抓取、不推断下架即成交。",
+                "en": "Manual active-listing observations only; no scraping and no assumption that removed listings were sold.",
+            },
+        }
+
+    @app.post("/dashboard/trademe/snapshots", status_code=201)
+    def create_trademe_snapshot(payload: TradeMeSnapshotCreate) -> dict[str, Any]:
+        return snapshot_metrics(trademe_store.create(payload))
+
+    @app.delete("/dashboard/trademe/snapshots/{snapshot_id}")
+    def delete_trademe_snapshot(snapshot_id: str) -> dict[str, str]:
+        if not trademe_store.delete(snapshot_id):
+            raise HTTPException(status_code=404, detail="Trade Me snapshot not found")
+        return {"deleted_snapshot_id": snapshot_id}
 
     @app.post("/dashboard/market/refresh")
     def dashboard_market_refresh() -> dict[str, Any]:
