@@ -17,7 +17,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - Sprint 1: product candidate CRUD, 1688-style supplier CSV import, shipping-rate CSV import, China-to-NZ direct landed-cost economics.
 - Sprint 2: Google Keyword Planner refresh boundary fixed to `New Zealand` + `English`, keyword cluster scoring, synonym-safe demand aggregation.
 - Sprint 3: Stats NZ import-metric CSV import, HS mapping confidence workflow, import evidence scoring, pre-launch opportunity ranking.
-- Guardrails: no Trade Me competitor scraping; Trade Me market data is represented only as a manual-snapshot schema placeholder.
+- Guardrails: Trade Me evidence capture is user initiated and limited to the currently visible page; there is no unattended crawling, automatic pagination, or removed-listing-to-sale inference.
 
 ## API Surface
 
@@ -28,7 +28,7 @@ Google Ads API credentials are not stored in this repository. Use `.env.example`
 - `POST /business/inventory-risk` checks planned SKU quantities and landed unit costs against the initial inventory-risk cap.
 - `POST /keywords/refresh` accepts refreshed Keyword Planner metrics.
 - `POST /imports/refresh` accepts Stats NZ metrics as JSON or CSV text.
-- `GET /dashboard/trademe` returns manual Trade Me market snapshots and derived evidence metrics.
+- `GET /dashboard/trademe` returns source-linked Trade Me market snapshots and derived evidence metrics.
 - `POST /dashboard/trademe/snapshots` records a dated, source-linked active-listing sample; `DELETE /dashboard/trademe/snapshots/{id}` removes an incorrect observation.
 - `POST /batches/rank` reads local CSV paths, writes a ranked opportunity CSV, and can persist a local SQLite state file.
 - `POST /sources/1688/discover` parses 1688 HTML or JSON payloads into reviewable product, supplier-offer, and keyword-seed records without importing them automatically.
@@ -50,11 +50,21 @@ $env:PYTHONPATH="src"; .venv\Scripts\python -m uvicorn product_scout.api:create_
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
-The bilingual research workspace is served at the same URL. It provides market demand, Trade Me manual market validation, conclusions, opportunity filters, live Google Ads refresh, and inventory-risk controls without exposing API credentials to the browser.
+The bilingual research workspace is served at the same URL. It provides market demand, Trade Me market validation, conclusions, opportunity filters, live Google Ads refresh, and inventory-risk controls without exposing API credentials to the browser.
 
-Trade Me observations are stored locally in `.local/market-validation/trademe_snapshots.json`. The workspace validates sample counts, records the source URL and observation date, and reports supply, price, bid-activity, and evidence-completeness metrics. It does not scrape Trade Me or treat a removed listing as a sale.
+Trade Me observations are stored locally in `.local/market-validation/trademe_snapshots.json`. The workspace validates sample counts, records the source URL and observation date, and reports supply, price, bid-activity, and evidence-completeness metrics. It does not automatically paginate or treat a removed listing as a sale.
 
-For the fastest capture, copy the visible Trade Me search-results page text and use **Paste & analyse**. The browser extracts reviewable NZD price chips plus visible result, Buy Now, free-shipping, and bid signals; remove any misidentified price before saving. Detailed seller and count fields remain available under **Advanced evidence**.
+For the fastest capture, use the Chrome extension in `tools/trademe-capture-extension/`. Opening the extension automatically analyses the current Trade Me search-results page. Review the NZD price chips, click any incorrect price to exclude it, and choose **Save to Product Scout**. Copying page text into **Paste & analyse** remains available as a fallback. Detailed seller and count fields remain available under **Advanced evidence**.
+
+### Trade Me Chrome Capture
+
+1. Open `chrome://extensions` and enable Developer mode.
+2. Choose **Load unpacked** and select `tools/trademe-capture-extension/`.
+3. Keep Product Scout running at `http://127.0.0.1:8000`.
+4. Open a Trade Me search-results page and click the extension.
+5. Review the automatically detected prices, then choose **Save to Product Scout**.
+
+The extension reads the current rendered page only after you click it. It sends aggregate evidence to the local API, does not export cookies or credentials, and does not run automatic pagination or background collection.
 
 ## Run A CSV Ranking Batch
 
@@ -200,7 +210,8 @@ GOOGLE_ADS_API_VERSION
 
 ## Compliance Notes
 
-- Trade Me competitor scraping is intentionally out of scope.
-- Trade Me usage should be limited to allowed category/fee endpoints and the seller's own listing, sold, and unsold data.
+- Unattended Trade Me crawling, automatic pagination, anti-bot bypass, and removed-listing-to-sale inference are intentionally out of scope.
+- The optional Trade Me extension performs a user-initiated capture of the currently rendered search page and keeps the source URL and observation date for auditability.
+- Prefer official Trade Me endpoints and first-party seller data whenever the required data is available through them.
 - Supplier and logistics data should come from official APIs, authorized exports, or explicitly provided quote tables.
 - Generated local state files such as SQLite databases and `.env` secrets are ignored by git.

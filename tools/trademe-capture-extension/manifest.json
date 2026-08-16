@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "NZ Product Scout - Trade Me Capture",
+  "version": "0.1.0",
+  "description": "采集当前 Trade Me 搜索结果页并保存到本地 Product Scout。",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": [
+    "https://*.trademe.co.nz/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "action": {
+    "default_title": "采集 Trade Me 当前页",
+    "default_popup": "popup.html"
+  }
+}

@@ -110,8 +110,8 @@ def create_app(
             "summary": summarize_snapshots(snapshots),
             "source": str(trademe_store.path),
             "policy": {
-                "zh": "仅记录人工观察的活跃商品样本；不抓取、不推断下架即成交。",
-                "en": "Manual active-listing observations only; no scraping and no assumption that removed listings were sold.",
+                "zh": "仅在用户主动操作时采集当前可见结果；不自动翻页，也不推断下架即成交。",
+                "en": "Capture only the current visible results on explicit user action; no automatic pagination and no assumption that removed listings were sold.",
             },
         }
 

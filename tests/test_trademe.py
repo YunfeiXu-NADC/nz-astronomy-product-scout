@@ -37,6 +37,7 @@ def test_trademe_snapshot_is_persisted_and_summarized(tmp_path):
     assert result.json()["summary"]["snapshot_count"] == 1
     assert result.json()["summary"]["median_active_listings_per_cluster"] == 84
     assert result.json()["snapshots"][0]["search_query"] == "beginner telescope"
+    assert "不自动翻页" in result.json()["policy"]["zh"]
 
     reloaded = TestClient(create_app(data_root=tmp_path)).get("/dashboard/trademe")
     assert reloaded.json()["summary"]["snapshot_count"] == 1
@@ -101,3 +102,32 @@ def test_trademe_zero_result_observation_does_not_require_prices(tmp_path):
     assert response.status_code == 201
     assert response.json()["evidence_status"] == "INSUFFICIENT"
     assert response.json()["median_price_nzd"] is None
+
+
+def test_trademe_extension_style_capture_is_accepted(tmp_path):
+    client = TestClient(create_app(data_root=tmp_path))
+    payload = _snapshot_payload()
+    payload.update(
+        {
+            "query_cluster": "functional_accessories",
+            "search_query": "telescope adapter",
+            "active_listing_count": 42,
+            "sampled_listing_count": 4,
+            "unique_seller_count": 0,
+            "min_price_nzd": "19.00",
+            "median_price_nzd": "32.50",
+            "max_price_nzd": "89.00",
+            "buy_now_listing_count": 3,
+            "bid_listing_count": 1,
+            "total_bid_count": 2,
+            "in_trade_seller_count": 0,
+            "free_shipping_listing_count": 1,
+            "notes": "User-initiated Chrome extension capture of the current visible page; 4 listings reviewed.",
+        }
+    )
+
+    response = client.post("/dashboard/trademe/snapshots", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["sampled_listing_count"] == 4
+    assert response.json()["query_cluster"] == "functional_accessories"

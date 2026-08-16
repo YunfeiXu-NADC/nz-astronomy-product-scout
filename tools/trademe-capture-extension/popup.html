@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trade Me 市场采集</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="mark">TM</span>
+        <div>
+          <h1>Trade Me 市场采集</h1>
+          <p>打开即分析当前搜索结果页</p>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status">正在读取当前页面...</p>
+
+      <section id="preview" class="preview" hidden>
+        <div class="summary-grid">
+          <div><strong id="sample-count">0</strong><span>本页商品</span></div>
+          <div><strong id="active-count">0</strong><span>全部结果</span></div>
+          <div><strong id="median-price">-</strong><span>中位价</span></div>
+        </div>
+
+        <label>
+          <span>查询词 / Search query</span>
+          <input id="search-query" maxlength="160" required>
+        </label>
+        <label>
+          <span>机会簇 / Opportunity cluster</span>
+          <input id="query-cluster" maxlength="80" required>
+        </label>
+
+        <div class="price-heading">
+          <span>识别价格</span>
+          <small>点一下可排除误识别项</small>
+        </div>
+        <div id="price-chips" class="price-chips"></div>
+
+        <button id="save" class="primary" type="button">保存到 Product Scout</button>
+        <button id="rescan" class="secondary" type="button">重新分析当前页</button>
+      </section>
+
+      <a class="app-link" href="http://127.0.0.1:8000/#trademe" target="_blank">打开 Product Scout</a>
+      <footer>仅在你点击插件时读取当前页，不读取 Cookie，不自动翻页。</footer>
+    </main>
+    <script src="extractor.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -29,8 +29,8 @@ const translations = {
     competition: "竞争指数",
     bidRange: "Bid 区间",
     trademeValidation: "Trade Me 市场验证",
-    trademeSubtitle: "记录人工观察的活跃商品样本；不抓取，也不把下架直接视为成交。",
-    manualEvidence: "仅限人工证据",
+    trademeSubtitle: "采集你主动打开的当前页样本；不自动翻页，也不把下架直接视为成交。",
+    manualEvidence: "当前页证据",
     recordObservation: "记录市场观察",
     reset: "重置",
     saveSnapshot: "保存快照",
@@ -73,8 +73,8 @@ const translations = {
     competition: "Competition",
     bidRange: "Bid range",
     trademeValidation: "Trade Me market validation",
-    trademeSubtitle: "Record manually observed active listings; no scraping and no assumption that removed listings were sold.",
-    manualEvidence: "Manual evidence only",
+    trademeSubtitle: "Capture the current page you explicitly open; no automatic pagination and no assumption that removed listings were sold.",
+    manualEvidence: "Current-page evidence",
     recordObservation: "Record market observation",
     reset: "Reset",
     saveSnapshot: "Save snapshot",
@@ -577,11 +577,18 @@ function bindNavigation() {
     button.addEventListener("click", () => switchTab(button.dataset.goto));
   });
   document.querySelector("#refresh-market").addEventListener("click", refreshMarket);
+  const initialTab = window.location.hash.slice(1);
+  if (document.querySelector(`[data-tab="${initialTab}"]`)) switchTab(initialTab, false);
+  window.addEventListener("hashchange", () => {
+    const tab = window.location.hash.slice(1);
+    if (document.querySelector(`[data-tab="${tab}"]`)) switchTab(tab, false);
+  });
 }
 
-function switchTab(name) {
+function switchTab(name, updateHash = true) {
   document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item.dataset.tab === name));
   document.querySelectorAll(".view").forEach((item) => item.classList.toggle("active", item.id === `view-${name}`));
+  if (updateHash && window.location.hash !== `#${name}`) history.replaceState(null, "", `#${name}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
