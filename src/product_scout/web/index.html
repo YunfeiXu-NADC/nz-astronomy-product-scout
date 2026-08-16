@@ -243,26 +243,42 @@
             </label>
           </div>
 
-          <div class="form-section">
-            <h3>Sample measurements / 样本指标</h3>
-            <div class="snapshot-metric-grid">
-              <label class="form-field"><span>Active listings / 活跃商品</span><input name="active_listing_count" type="number" min="0" step="1" required></label>
-              <label class="form-field"><span>Sampled / 抽样商品</span><input name="sampled_listing_count" type="number" min="0" step="1" required></label>
-              <label class="form-field"><span>Unique sellers / 独立卖家</span><input name="unique_seller_count" type="number" min="0" step="1" required></label>
-              <label class="form-field"><span>In-trade sellers / 企业卖家</span><input name="in_trade_seller_count" type="number" min="0" step="1" value="0" required></label>
-              <label class="form-field"><span>Minimum price / 最低价</span><input name="min_price_nzd" type="number" min="0" step="0.01"></label>
-              <label class="form-field"><span>Median price / 中位价</span><input name="median_price_nzd" type="number" min="0" step="0.01"></label>
-              <label class="form-field"><span>Maximum price / 最高价</span><input name="max_price_nzd" type="number" min="0" step="0.01"></label>
-              <label class="form-field"><span>Buy Now listings / 一口价</span><input name="buy_now_listing_count" type="number" min="0" step="1" value="0" required></label>
-              <label class="form-field"><span>Listings with bids / 有竞价</span><input name="bid_listing_count" type="number" min="0" step="1" value="0" required></label>
-              <label class="form-field"><span>Total bids / 总出价数</span><input name="total_bid_count" type="number" min="0" step="1" value="0" required></label>
-              <label class="form-field"><span>Free shipping / 包邮商品</span><input name="free_shipping_listing_count" type="number" min="0" step="1" value="0" required></label>
-            </div>
+          <div class="form-section quick-capture">
+            <h3>Page text / 页面文本</h3>
             <label class="form-field">
-              <span>Notes / 备注</span>
-              <textarea name="notes" maxlength="2000" rows="3" placeholder="第一页人工样本、主要品牌、异常价格或兼容性问题"></textarea>
+              <span>Trade Me result page text / 搜索结果页文本</span>
+              <textarea id="trademe-page-paste" rows="5" placeholder="Paste copied Trade Me results / 粘贴复制的搜索结果"></textarea>
             </label>
+            <div class="quick-actions">
+              <button class="button button-primary" type="button" id="paste-trademe-page"><i data-lucide="clipboard-paste"></i><span>粘贴并分析 / Paste &amp; analyse</span></button>
+              <button class="button button-secondary" type="button" id="analyze-trademe-page"><i data-lucide="scan-text"></i><span>分析文本 / Analyse text</span></button>
+            </div>
+            <div class="extraction-result" id="trademe-extraction" aria-live="polite"></div>
+            <div class="price-chip-list" id="trademe-price-chips"></div>
           </div>
+
+          <details class="advanced-evidence">
+            <summary><i data-lucide="sliders-horizontal"></i><span>Advanced evidence / 完整指标</span><i data-lucide="chevron-down" class="summary-chevron"></i></summary>
+            <div class="form-section">
+              <div class="snapshot-metric-grid">
+                <label class="form-field"><span>Active listings / 活跃商品</span><input name="active_listing_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Sampled / 抽样商品</span><input name="sampled_listing_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Unique sellers / 独立卖家</span><input name="unique_seller_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>In-trade sellers / 企业卖家</span><input name="in_trade_seller_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Minimum price / 最低价</span><input name="min_price_nzd" type="number" min="0" step="0.01"></label>
+                <label class="form-field"><span>Median price / 中位价</span><input name="median_price_nzd" type="number" min="0" step="0.01"></label>
+                <label class="form-field"><span>Maximum price / 最高价</span><input name="max_price_nzd" type="number" min="0" step="0.01"></label>
+                <label class="form-field"><span>Buy Now listings / 一口价</span><input name="buy_now_listing_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Listings with bids / 有竞价</span><input name="bid_listing_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Total bids / 总出价数</span><input name="total_bid_count" type="number" min="0" step="1" value="0" required></label>
+                <label class="form-field"><span>Free shipping / 包邮商品</span><input name="free_shipping_listing_count" type="number" min="0" step="1" value="0" required></label>
+              </div>
+              <label class="form-field">
+                <span>Notes / 备注</span>
+                <textarea name="notes" maxlength="2000" rows="3" placeholder="第一页人工样本、主要品牌、异常价格或兼容性问题"></textarea>
+              </label>
+            </div>
+          </details>
 
           <button class="button button-primary" type="submit" id="save-trademe-snapshot"><i data-lucide="save"></i><span data-i18n="saveSnapshot">保存快照</span></button>
         </form>

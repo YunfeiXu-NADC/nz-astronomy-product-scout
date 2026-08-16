@@ -5,6 +5,7 @@ const state = {
   trademe: { snapshots: [], summary: {}, policy: {} },
   opportunities: { items: [], source: "none" },
   targets: null,
+  tradeMePrices: [],
 };
 
 const translations = {
@@ -287,7 +288,10 @@ function renderOpportunityTable() {
 function bindTradeMe() {
   const form = document.querySelector("#trademe-form");
   form.addEventListener("submit", saveTradeMeSnapshot);
-  form.addEventListener("reset", () => setTimeout(setTradeMeDateDefault, 0));
+  form.addEventListener("reset", () => setTimeout(resetTradeMeCapture, 0));
+  document.querySelector("#paste-trademe-page").addEventListener("click", pasteAndAnalyzeTradeMe);
+  document.querySelector("#analyze-trademe-page").addEventListener("click", analyzeTradeMePageText);
+  document.querySelector('[name="source_url"]').addEventListener("input", inferTradeMeContextFromUrl);
   document.querySelector("#trademe-search").addEventListener("input", renderTradeMeTable);
   document.querySelector("#trademe-cluster-filter").addEventListener("input", renderTradeMeTable);
   setTradeMeDateDefault();
@@ -296,6 +300,9 @@ function bindTradeMe() {
 async function saveTradeMeSnapshot(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  if (!state.tradeMePrices.length && document.querySelector("#trademe-page-paste").value.trim()) {
+    analyzeTradeMePageText();
+  }
   const button = document.querySelector("#save-trademe-snapshot");
   const payload = Object.fromEntries(new FormData(form).entries());
   [
@@ -321,7 +328,7 @@ async function saveTradeMeSnapshot(event) {
     state.trademe = await fetchJson("/dashboard/trademe");
     renderTradeMe();
     form.reset();
-    setTradeMeDateDefault();
+    resetTradeMeCapture();
     showToast(state.language === "zh" ? "Trade Me 快照已保存" : "Trade Me snapshot saved");
   } catch (error) {
     showToast(error.message, true);
@@ -329,6 +336,153 @@ async function saveTradeMeSnapshot(event) {
     button.disabled = false;
     refreshIcons();
   }
+}
+
+async function pasteAndAnalyzeTradeMe() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) throw new Error(state.language === "zh" ? "剪贴板中没有文本" : "Clipboard has no text");
+    document.querySelector("#trademe-page-paste").value = text;
+    analyzeTradeMePageText();
+  } catch (error) {
+    document.querySelector("#trademe-page-paste").focus();
+    showToast(error.message || (state.language === "zh" ? "无法读取剪贴板，请直接粘贴" : "Clipboard unavailable; paste directly"), true);
+  }
+}
+
+function analyzeTradeMePageText() {
+  const text = document.querySelector("#trademe-page-paste").value;
+  const signals = extractTradeMeSignals(text);
+  state.tradeMePrices = signals.prices;
+  applyTradeMeSignals(signals);
+  renderTradeMePriceChips();
+}
+
+function extractTradeMeSignals(text) {
+  const prices = [...String(text).matchAll(/(?:NZ\s*)?\$\s*([0-9][0-9,]*(?:\.\d{1,2})?)/gi)]
+    .map((match) => Number(match[1].replaceAll(",", "")))
+    .filter((value) => Number.isFinite(value) && value >= 0.01 && value <= 100000);
+  const resultPatterns = [
+    /showing\s+[\d,]+\s*(?:-|–|to)\s*[\d,]+\s+of\s+([\d,]+)\+?/i,
+    /([\d,]+)\+?\s+(?:results|listings)\b/i,
+  ];
+  let activeListings = null;
+  for (const pattern of resultPatterns) {
+    const match = String(text).match(pattern);
+    if (match) {
+      activeListings = Number(match[1].replaceAll(",", ""));
+      break;
+    }
+  }
+  const bidCounts = [...String(text).matchAll(/\b(\d+)\s+bids?\b/gi)].map((match) => Number(match[1]));
+  return {
+    prices,
+    activeListings,
+    bidListingCount: bidCounts.length,
+    totalBidCount: bidCounts.reduce((total, value) => total + value, 0),
+    buyNowCount: (String(text).match(/\bbuy now\b/gi) || []).length,
+    freeShippingCount: (String(text).match(/\bfree shipping\b/gi) || []).length,
+  };
+}
+
+function applyTradeMeSignals(signals) {
+  const sample = signals.prices.length;
+  const activeField = document.querySelector('[name="active_listing_count"]');
+  const active = signals.activeListings == null ? Math.max(toNumber(activeField.value), sample) : signals.activeListings;
+  activeField.value = String(active);
+  document.querySelector('[name="sampled_listing_count"]').value = String(sample);
+  document.querySelector('[name="buy_now_listing_count"]').value = String(Math.min(sample, signals.buyNowCount));
+  document.querySelector('[name="bid_listing_count"]').value = String(Math.min(sample, signals.bidListingCount));
+  document.querySelector('[name="total_bid_count"]').value = String(signals.totalBidCount);
+  document.querySelector('[name="free_shipping_listing_count"]').value = String(Math.min(sample, signals.freeShippingCount));
+  updateTradeMePriceFields();
+  const extraction = document.querySelector("#trademe-extraction");
+  if (!sample) {
+    extraction.innerHTML = `<span class="status-chip low">${state.language === "zh" ? "没有识别到价格" : "No prices detected"}</span>`;
+    return;
+  }
+  extraction.innerHTML = `
+    <strong>${number(sample)} ${state.language === "zh" ? "个价格" : "prices"}</strong>
+    <span>${state.language === "zh" ? "中位价" : "Median"} ${money(medianValue(state.tradeMePrices))}</span>
+    <span>${number(Math.min(sample, signals.bidListingCount))} ${state.language === "zh" ? "个有竞价" : "with bids"}</span>`;
+}
+
+function renderTradeMePriceChips() {
+  const container = document.querySelector("#trademe-price-chips");
+  container.innerHTML = state.tradeMePrices.map((value, index) => `
+    <button type="button" class="price-chip" data-price-index="${index}" title="Remove detected price / 删除误识别价格">
+      ${money(value)}<i data-lucide="x"></i>
+    </button>`).join("");
+  container.querySelectorAll(".price-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.tradeMePrices.splice(Number(button.dataset.priceIndex), 1);
+      document.querySelector('[name="sampled_listing_count"]').value = String(state.tradeMePrices.length);
+      clampTradeMeSampleCounts();
+      updateTradeMePriceFields();
+      renderTradeMePriceChips();
+      const extraction = document.querySelector("#trademe-extraction");
+      extraction.innerHTML = state.tradeMePrices.length
+        ? `<strong>${number(state.tradeMePrices.length)} ${state.language === "zh" ? "个价格" : "prices"}</strong><span>${state.language === "zh" ? "中位价" : "Median"} ${money(medianValue(state.tradeMePrices))}</span>`
+        : `<span class="status-chip low">${state.language === "zh" ? "没有保留价格" : "No prices retained"}</span>`;
+    });
+  });
+  refreshIcons();
+}
+
+function clampTradeMeSampleCounts() {
+  const sample = state.tradeMePrices.length;
+  ["buy_now_listing_count", "bid_listing_count", "free_shipping_listing_count"].forEach((name) => {
+    const field = document.querySelector(`[name="${name}"]`);
+    field.value = String(Math.min(sample, toNumber(field.value)));
+  });
+}
+
+function updateTradeMePriceFields() {
+  const sorted = [...state.tradeMePrices].sort((a, b) => a - b);
+  const values = sorted.length ? [sorted[0], medianValue(sorted), sorted[sorted.length - 1]] : ["", "", ""];
+  ["min_price_nzd", "median_price_nzd", "max_price_nzd"].forEach((name, index) => {
+    document.querySelector(`[name="${name}"]`).value = values[index] === "" ? "" : Number(values[index]).toFixed(2);
+  });
+}
+
+function inferTradeMeContextFromUrl(event) {
+  try {
+    const url = new URL(event.currentTarget.value);
+    const query = url.searchParams.get("search_string") || url.searchParams.get("searchString") || url.searchParams.get("q");
+    const queryField = document.querySelector('[name="search_query"]');
+    if (query && !queryField.value.trim()) {
+      queryField.value = query.replaceAll("+", " ").trim();
+      document.querySelector('[name="query_cluster"]').value = inferTradeMeCluster(queryField.value);
+    }
+  } catch (_) {
+    // Native URL validation will report malformed input on submit.
+  }
+}
+
+function inferTradeMeCluster(query) {
+  const clean = query.toLowerCase();
+  if (/matariki/.test(clean)) return "matariki";
+  if (/gift|lamp|projector|star map|poster/.test(clean)) return "astronomy_gifts";
+  if (/stem|education|solar system|model/.test(clean)) return "education_stem";
+  if (/astrophoto|camera/.test(clean)) return "astrophotography";
+  if (/adapter|eyepiece|filter|mask|mount|tripod|accessor/.test(clean)) return "compatibility_accessories";
+  return "beginner_telescope";
+}
+
+function medianValue(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function resetTradeMeCapture() {
+  state.tradeMePrices = [];
+  document.querySelector("#trademe-page-paste").value = "";
+  document.querySelector("#trademe-extraction").innerHTML = "";
+  document.querySelector("#trademe-price-chips").innerHTML = "";
+  document.querySelector(".advanced-evidence").open = false;
+  setTradeMeDateDefault();
 }
 
 function renderTradeMe() {

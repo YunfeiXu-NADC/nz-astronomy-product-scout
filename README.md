@@ -54,6 +54,8 @@ The bilingual research workspace is served at the same URL. It provides market d
 
 Trade Me observations are stored locally in `.local/market-validation/trademe_snapshots.json`. The workspace validates sample counts, records the source URL and observation date, and reports supply, price, bid-activity, and evidence-completeness metrics. It does not scrape Trade Me or treat a removed listing as a sale.
 
+For the fastest capture, copy the visible Trade Me search-results page text and use **Paste & analyse**. The browser extracts reviewable NZD price chips plus visible result, Buy Now, free-shipping, and bid signals; remove any misidentified price before saving. Detailed seller and count fields remain available under **Advanced evidence**.
+
 ## Run A CSV Ranking Batch
 
 ```powershell

@@ -226,7 +226,7 @@ def summarize_snapshots(snapshots: list[TradeMeSnapshot]) -> dict[str, Any]:
 
 
 def _confidence_score(snapshot: TradeMeSnapshot) -> int:
-    score = 25  # A dated Trade Me source URL and query are mandatory.
+    score = 20  # A dated Trade Me source URL and query are mandatory.
     if snapshot.sampled_listing_count >= 25:
         score += 30
     elif snapshot.sampled_listing_count >= 10:
